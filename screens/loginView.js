@@ -1,15 +1,15 @@
 import { StatusBar } from 'expo-status-bar';
 import { StyleSheet, Text, View, Button, TextInput, Platform } from 'react-native';
 import { useState, useEffect } from 'react';
-import { db, app } from './components/config';
-import { addDoc, collection } from 'firebase/firestore';
-import { getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut, createUserWithEmailAndPassword } from 'firebase/auth'
+import { app } from './components/config';
+import { StatusContext } from "../context/context"
+import { getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut } from 'firebase/auth'
 import { initializeAuth, getReactNativePersistence } from 'firebase/auth'
 import  ReactNativeAsyncStorage from '@react-native-async-storage/async-storage';
 
 
-
 const LoginPage = ({navigation, route}) => {
+
     let auth
     if(Platform.OS === 'web'){
     auth = getAuth(app)
@@ -18,22 +18,32 @@ const LoginPage = ({navigation, route}) => {
         persistence:getReactNativePersistence(ReactNativeAsyncStorage)
     })
     }
+
     const [enteredEmail, setEnteredEmail] = useState("jacobankerm@gmail.com")
     const [enteredPassword, setEnteredPassword] = useState("123test")
     const [userId, setUserId] = useState(null)
-    const [enteredText, setEnteredText] = useState("Type here")
+    const statusContext = useContext(StatusContext)
 
     useEffect(()=>{
         const auth_ = getAuth()
         const unsubscribe = onAuthStateChanged(auth_, (currentUser) => {
         if(currentUser){
+            statusContext.setCurrentUser(currentUser)
             setUserId(currentUser.uid)
+            getAccountData()
         }else{
+            statusContext.setCurrentUser(null)
             setUserId(null)
         }
         })
         return () => unsubscribe()
     },[])
+
+
+    async function getAccountData(){
+        userdata = await getDoc(doc(db,statusContext.currentUser.uid ))
+        statusContext.setAccountData(userdata)
+    }
 
     async function signOut_(){
         await signOut(auth)
@@ -49,27 +59,11 @@ const LoginPage = ({navigation, route}) => {
         }
     }
 
-    async function signUp(){
-        try{
-        const userCredential = await createUserWithEmailAndPassword(auth, enteredEmail, enteredPassword)
-        console.log("sign up succes " + userCredential.user.uid)
-        }catch(error){
-
-        }
-    }
-    
-    async function addDocument(){
-        try{
-        await addDoc(collection(db,userId),{
-            text:enteredText
-        })
-        }catch(error){
-        console.log("error addDocument" + error)
-        }
-    }
-
     return (
         <View style={styles.container}>
+
+        <Text>Login-Guesser</Text>
+
         { !userId &&
             <>
         <Text>Login</Text>
@@ -91,29 +85,28 @@ const LoginPage = ({navigation, route}) => {
         
         <Button
         title='Sign Up'
-        onPress={signUp}
+        onPress={() => 
+            navigation.navigate("SignUpPage")
+        }
         />
+
+        <Text
+            onPress={() => 
+            navigation.navigate("MapPage", {auth:auth})
+        }
+        >Play without an Account</Text>
 
         </>}
+
+
         { userId &&
         <>
-        <TextInput
-        onChangeText={newText => setEnteredText(newText)}
-        value={enteredText}
-        />
-
-
-        
-        <Button
-        title='Add Document'
-        onPress={addDocument}
-        />
-
 
         <Button
         title='Sign out'
         onPress={signOut_}
         />
+
         </>}
 
         <StatusBar style="auto" />
