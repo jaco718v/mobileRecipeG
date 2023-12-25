@@ -42,7 +42,7 @@ const LoginPage = ({navigation, route}) => {
 
     async function getAccountData(){
         userdata = await getDoc(doc(db,statusContext.currentUser.uid ))
-        statusContext.setAccountData(userdata)
+        statusContext.setAccountData({...userdata.data(), id: userdata.id})
     }
 
     async function signOut_(){

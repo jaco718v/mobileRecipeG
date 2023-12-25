@@ -91,11 +91,13 @@ const MapPage = ({navigation, route}) => {
             locationName: locationName,
             locationDesc: locationDesc
         }
+        let newId = getNextId(markers)
         try{
         await addDoc(doc(db, "locationMarkers"))
         await updateDoc(doc(db,statusContext.currentUser.uid),{
-            locationId: getNextId(markers)
+            locationId: newId
         })
+        statusContext.setCurrentUser({...statusContext.currentUser, locationId:newId})
         }
         catch(error){
             console.log("sad error : ", error)
@@ -127,6 +129,16 @@ const MapPage = ({navigation, route}) => {
                 ))}
             </MapView>
             
+            { statusContext.currentUser &&
+            <>
+            <View>
+                <Text>Progress</Text>
+                <Text>Your Recipes</Text>
+            </View>
+            </>
+            }
+
+
             {showCreate &&
             <>
             <View>
