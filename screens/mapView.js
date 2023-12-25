@@ -1,10 +1,17 @@
 import MapView, { Marker} from 'react-native-maps'
 import { useState, useRef, useEffect } from 'react'
-import { getDocs, collection, doc, getDoc } from 'firebase'
+import { getDocs, collection, doc, getDoc, addDoc, updateDoc } from 'firebase'
 import * as Location from 'expo-location'
 import { StatusContext } from "../context/context"
+import { TouchableOpacity } from 'react-native'
+import { getNextId } from '../util/util'
 
 const MapPage = ({navigation, route}) => {
+    const [newMarkerData, setMarkerData] = useState(null)
+    const [showLocation, setShowLocation] = useState(false)
+    const [showCreate, setShowCreate] = useState(false)
+    const [locationName, setLocationName] = useState('Unnamed')
+    const [locationDesc, setLocationDesc] = useState('desc')
     const statusContext = useContext(StatusContext)
     const [markers, setMarkers] = useState([])
     const [region, setRegion] = useState({
@@ -71,10 +78,29 @@ const MapPage = ({navigation, route}) => {
         const {latitude, longitude} = data.nativeEvent.coordinate
         const newMarker = {
             coordinate: {latitude, longitude},
-            key: data.timeStamp,
-            title: "titel"
+            key: data.timeStamp
         }
-        setMarkers([...markers, newMarker])
+        setMarkerData(newMarker)
+        setShowCreate(true)
+        //setMarkers([...markers, newMarker])
+    }
+
+    async function createLocation(){
+        const newMarker = {
+            ...newMarkerData,
+            locationName: locationName,
+            locationDesc: locationDesc
+        }
+        try{
+        await addDoc(doc(db, "locationMarkers"))
+        await updateDoc(doc(db,statusContext.currentUser.uid),{
+            locationId: getNextId(markers)
+        })
+        }
+        catch(error){
+            console.log("sad error : ", error)
+        }
+
     }
 
     function onMarkerPressed(){
@@ -86,7 +112,10 @@ const MapPage = ({navigation, route}) => {
             <MapView 
             style={styles.map}
             region={region}
-            onLongPress={addMarker}
+            onLongPress={() => {
+                if(statusContext.accountData.type === 1 && !statusContext.accountData.locationId)
+                addMarker()
+            }}
             >
                 {markers.map(marker => (
                     <Marker
@@ -97,8 +126,58 @@ const MapPage = ({navigation, route}) => {
                     />
                 ))}
             </MapView>
-        </View>
+            
+            {showCreate &&
+            <>
+            <View>
+                <TextInput
+                    onChangeText={newText => setLocationName(newText)}
+                    value = {locationName}
+                />
 
+                <TextInput
+                    onChangeText={newText => setLocationDesc(newText)}
+                    value = {locationDesc}
+                />
+
+                <TouchableOpacity
+                onPress={setShowCreate(!showCreate)}
+                >
+                    <Text style={styles.backgroundText}>Cancel</Text> 
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                onPress={createLocation}
+                >
+                    <Text style={styles.backgroundText}>Create</Text> 
+                </TouchableOpacity>
+            </View>
+            </>
+            }
+
+            {showLocation &&
+            <>
+            <View>
+              <Text></Text>
+
+              <Text></Text>
+
+                <TouchableOpacity
+                onPress={setShowCreate(!showLocation)}
+                >
+                    <Text style={styles.backgroundText}>Close</Text> 
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                onPress={navigation.navigate("RecipeView")}
+                >
+                    <Text style={styles.backgroundText}>Open</Text> 
+                </TouchableOpacity>
+            </View>
+            </>
+            }
+        </View>
+        
     )
 }
 
