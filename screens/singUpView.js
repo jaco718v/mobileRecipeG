@@ -1,10 +1,10 @@
-import { View } from "react-native"
-import { addDoc, collection } from 'firebase'
+import { View, TextInput, TouchableOpacity, Text, StyleSheet } from "react-native"
+import { setDoc, doc } from 'firebase/firestore'
 import { createUserWithEmailAndPassword } from 'firebase/auth'
 import { StatusContext } from "../context/context"
 import BouncyCheckbox from "react-native-bouncy-checkbox";
-import { db } from './components/config'
-import { useState } from "react";
+import { db } from "../components/config";
+import { useState, useContext } from "react";
 
 const SignUpPage = ({navigation, route}) => {
     const [enteredEmail, setEnteredEmail] = useState("testtest@gmail.com")
@@ -17,18 +17,17 @@ const SignUpPage = ({navigation, route}) => {
         try{
         const userCredential = await createUserWithEmailAndPassword(auth, enteredEmail, enteredPassword)
         console.log("sign up succes " + userCredential.user.uid)
-        setupUserData(userCredential)
+        setupUserData(userCredential.user.uid)
         navigation.navigate("MapPage")
         }catch(error){
-
+            console.log(error)
         }
-    
-
     }
 
-    async function setupUserData(userCredentials){
+    async function setupUserData(uid){
+        
         try{
-          await addDoc(collection(db,userCredentials.user.id),{
+          await setDoc(doc(db, "users" , uid),{
             type:accountType
           })
         }catch(error){
@@ -51,7 +50,7 @@ const SignUpPage = ({navigation, route}) => {
 
             <BouncyCheckbox
                 text = "Resturant account"
-                onPress={setAccountType(!accountType)}
+                onPress={() => setAccountType(!accountType)}
             />
 
             {   accountType &&
@@ -73,3 +72,12 @@ const SignUpPage = ({navigation, route}) => {
 }
 
 export default SignUpPage
+
+const styles = StyleSheet.create({
+    container: {
+      flex: 1,
+      backgroundColor: '#fff',
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+  });

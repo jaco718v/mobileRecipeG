@@ -1,8 +1,9 @@
 import { StatusBar } from 'expo-status-bar';
 import { StyleSheet, Text, View, Button, TextInput, Platform } from 'react-native';
-import { useState, useEffect } from 'react';
-import { app } from './components/config';
+import { useState, useEffect, useContext } from 'react';
+import { app, db } from '../components/config';
 import { StatusContext } from "../context/context"
+import { getDoc, doc } from 'firebase/firestore';
 import { getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut } from 'firebase/auth'
 import { initializeAuth, getReactNativePersistence } from 'firebase/auth'
 import  ReactNativeAsyncStorage from '@react-native-async-storage/async-storage';
@@ -14,13 +15,13 @@ const LoginPage = ({navigation, route}) => {
     if(Platform.OS === 'web'){
     auth = getAuth(app)
     }else{
-    auth = initializeAuth(auth, {
+    auth = initializeAuth(app, {
         persistence:getReactNativePersistence(ReactNativeAsyncStorage)
     })
     }
 
-    const [enteredEmail, setEnteredEmail] = useState("jacobankerm@gmail.com")
-    const [enteredPassword, setEnteredPassword] = useState("123test")
+    const [enteredEmail, setEnteredEmail] = useState("testtest@gmail.com")
+    const [enteredPassword, setEnteredPassword] = useState("1234test")
     const [userId, setUserId] = useState(null)
     const statusContext = useContext(StatusContext)
 
@@ -30,7 +31,7 @@ const LoginPage = ({navigation, route}) => {
         if(currentUser){
             statusContext.setCurrentUser(currentUser)
             setUserId(currentUser.uid)
-            getAccountData()
+            getAccountData(currentUser)
         }else{
             statusContext.setCurrentUser(null)
             setUserId(null)
@@ -40,8 +41,8 @@ const LoginPage = ({navigation, route}) => {
     },[])
 
 
-    async function getAccountData(){
-        userdata = await getDoc(doc(db,statusContext.currentUser.uid ))
+    async function getAccountData(data){
+        const userdata = await getDoc(doc(db ,"users" , data.uid ))
         statusContext.setAccountData({...userdata.data(), id: userdata.id})
     }
 
@@ -86,13 +87,13 @@ const LoginPage = ({navigation, route}) => {
         <Button
         title='Sign Up'
         onPress={() => 
-            navigation.navigate("SignUpPage")
+            navigation.navigate("signUpPage", {auth:auth})
         }
         />
 
         <Text
             onPress={() => 
-            navigation.navigate("MapPage", {auth:auth})
+            navigation.navigate("mapPage")
         }
         >Play without an Account</Text>
 
