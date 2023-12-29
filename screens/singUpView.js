@@ -18,7 +18,7 @@ const SignUpPage = ({navigation, route}) => {
         const userCredential = await createUserWithEmailAndPassword(auth, enteredEmail, enteredPassword)
         console.log("sign up succes " + userCredential.user.uid)
         setupUserData(userCredential.user.uid)
-        navigation.navigate("MapPage")
+        navigation.navigate("loginPage")
         }catch(error){
             console.log(error)
         }

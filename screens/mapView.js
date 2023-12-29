@@ -96,7 +96,10 @@ const MapPage = ({navigation, route}) => {
         }
         let newId = getNextId(markers)
         try{
-        await addDoc(doc(db, "locationMarkers"))
+        await addDoc(doc(db, "locationMarkers"),{
+            ...newMarker,
+            id: newId
+        })
         await updateDoc(doc(db,'Users' ,statusContext.currentUser.uid),{
             locationId: newId
         })
@@ -110,7 +113,7 @@ const MapPage = ({navigation, route}) => {
     }
 
     function onMarkerPressed(){
-        //setShowLocation(true)
+        alert("You pressed a marker")
     }
 
     return( 
@@ -118,9 +121,9 @@ const MapPage = ({navigation, route}) => {
             <MapView 
             style={styles.map}
             region={region}
-            onLongPress={() => {
-                if(statusContext.accountData.type === 1 && !statusContext.accountData.locationId)
-                addMarker()
+            onLongPress={(event) => {
+                if(statusContext.accountData.type === true && !statusContext.accountData.locationId)
+                addMarker(event)
             }}
             >
                 {markers.map(marker => (
@@ -135,14 +138,14 @@ const MapPage = ({navigation, route}) => {
             
 
             <View style={styles.optionBar}>
-            { statusContext.accountData.type === 0 &&
+            { statusContext.accountData.type === false &&
             <>
                 <Text>Progress</Text>
                 <Text>Score</Text>
             </>
             }
 
-            { statusContext.accountData.type === 1 &&
+            { statusContext.accountData.type === true &&
             <>
                 <Text>Edit Recipes</Text>
                 <Text>Edit Location</Text>
@@ -226,9 +229,17 @@ const styles = StyleSheet.create({
         backgroundColor: '#a9c1c8'
     },
     createBox:{
-        position: 'absolute'
+        position: 'absolute',
+        height: '30%',
+        width: '100%',
+        bottom: 0,
+        backgroundColor: '#a9c1c8'
     },
     showBox:{
-        position: 'absolute'
+        position: 'absolute',
+        height: '30%',
+        width: '100%',
+        bottom: 0,
+        backgroundColor: '#a9c1c8'
     }
 })

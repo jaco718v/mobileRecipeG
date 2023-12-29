@@ -1,10 +1,11 @@
 import { StatusBar } from 'expo-status-bar';
-import { StyleSheet, Text, View, Button, TextInput, Platform } from 'react-native';
+import { StyleSheet, Text, View, Button, TextInput, Platform, TouchableOpacity } from 'react-native';
 import { useState, useEffect, useContext } from 'react';
 import { app, db } from '../components/config';
 import { StatusContext } from "../context/context"
 import { getDoc, doc } from 'firebase/firestore';
 import { getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut } from 'firebase/auth'
+
 
 
 
@@ -51,7 +52,17 @@ const LoginPage = ({navigation, route}) => {
     }
 
     return (
-        <View style={styles.container}>
+        <View>
+
+        <TouchableOpacity
+                activeOpacity={1}
+                style={styles.container}
+                onPress={() => {
+                    if(statusContext.currentUser !== null){
+                        navigation.navigate("mapPage")
+                    }
+                }}
+        >
 
         <Text>Login-Guesser</Text>
 
@@ -98,12 +109,16 @@ const LoginPage = ({navigation, route}) => {
 
         <Button
         title='Sign out'
-        onPress={signOut_}
+        onPress={(event) => {
+            event.stopPropagation()
+            signOut_()
+        }}
         />
 
         </>}
 
         <StatusBar style="auto" />
+        </TouchableOpacity>
         </View>
     );
 }
@@ -112,9 +127,13 @@ export default LoginPage
 
 const styles = StyleSheet.create({
   container: {
-    flex: 1,
+    height: '100%',
+    width: '100%',
     backgroundColor: '#fff',
     alignItems: 'center',
     justifyContent: 'center',
   },
+  touchableBox: {
+
+  }
 });
