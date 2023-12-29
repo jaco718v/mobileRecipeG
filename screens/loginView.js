@@ -5,21 +5,11 @@ import { app, db } from '../components/config';
 import { StatusContext } from "../context/context"
 import { getDoc, doc } from 'firebase/firestore';
 import { getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut } from 'firebase/auth'
-import { initializeAuth, getReactNativePersistence } from 'firebase/auth'
-import  ReactNativeAsyncStorage from '@react-native-async-storage/async-storage';
+
 
 
 const LoginPage = ({navigation, route}) => {
-
-    let auth
-    if(Platform.OS === 'web'){
-    auth = getAuth(app)
-    }else{
-    auth = initializeAuth(app, {
-        persistence:getReactNativePersistence(ReactNativeAsyncStorage)
-    })
-    }
-
+    let auth = getAuth()
     const [enteredEmail, setEnteredEmail] = useState("testtest@gmail.com")
     const [enteredPassword, setEnteredPassword] = useState("1234test")
     const [userId, setUserId] = useState(null)
@@ -86,14 +76,17 @@ const LoginPage = ({navigation, route}) => {
         
         <Button
         title='Sign Up'
-        onPress={() => 
-            navigation.navigate("signUpPage", {auth:auth})
+        onPress={() =>
+
+            navigation.navigate("signUpPage")
         }
         />
 
+
         <Text
-            onPress={() => 
-            navigation.navigate("mapPage")
+            onPress={() => {
+            statusContext.setAccountData({type: null})    
+            navigation.navigate("mapPage")}
         }
         >Play without an Account</Text>
 

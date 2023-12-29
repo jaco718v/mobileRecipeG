@@ -5,14 +5,14 @@ import { StatusContext } from "../context/context"
 import BouncyCheckbox from "react-native-bouncy-checkbox";
 import { db } from "../components/config";
 import { useState, useContext } from "react";
+import { getAuth } from "firebase/auth";
 
 const SignUpPage = ({navigation, route}) => {
     const [enteredEmail, setEnteredEmail] = useState("testtest@gmail.com")
     const [enteredPassword, setEnteredPassword] = useState("1234test")
     const [accountType, setAccountType] = useState(false)
     const statusContext = useContext(StatusContext)
-    let auth = route.params?.auth
-
+    let auth = getAuth()
     async function signUp(){
         try{
         const userCredential = await createUserWithEmailAndPassword(auth, enteredEmail, enteredPassword)

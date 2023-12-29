@@ -2,6 +2,7 @@ import MapView, { Marker} from 'react-native-maps'
 import { useState, useRef, useEffect, useContext } from 'react'
 import { getDocs, collection, doc, getDoc, addDoc, updateDoc } from 'firebase/firestore'
 import * as Location from 'expo-location'
+import { db } from '../components/config'
 import { StatusContext } from "../context/context"
 import { TouchableOpacity, View, Text, TextInput, StyleSheet } from 'react-native'
 import { getNextId } from '../util/util'
@@ -27,7 +28,7 @@ const MapPage = ({navigation, route}) => {
 
     useEffect( () => {
         async function startListening(){
-            let { status } = await Location.requestForegroundPermissionsAsync
+            let { status } = await Location.requestForegroundPermissionsAsync()
             if(status !== 'granted'){
                 alert("Denied access to gps")
                 return
@@ -39,8 +40,8 @@ const MapPage = ({navigation, route}) => {
                 const newRegion = {
                     latitude: location.coords.latitude,
                     longitude: location.coords.longitude,
-                    latitudeDelta: 20,
-                    longitudeDelta: 20
+                    latitudeDelta: 0.005,
+                    longitudeDelta: 0.005
                 }
                 setRegion(newRegion)
                 if(mapView.current){
@@ -51,7 +52,7 @@ const MapPage = ({navigation, route}) => {
         startListening()
         return () => {
             if(locationSubscription.current){
-                location.current.remove()
+                locationSubscription.current.remove()
             }
         }
     },[] )
@@ -134,21 +135,21 @@ const MapPage = ({navigation, route}) => {
             
 
             <View style={styles.optionBar}>
-            { statusContext.accountData.type == 0 &&
+            { statusContext.accountData.type === 0 &&
             <>
                 <Text>Progress</Text>
                 <Text>Score</Text>
             </>
             }
 
-            { statusContext.accountData.type == 1 &&
+            { statusContext.accountData.type === 1 &&
             <>
                 <Text>Edit Recipes</Text>
                 <Text>Edit Location</Text>
             </>
             }
 
-            { !statusContext.currentUser.uid &&
+            { statusContext.accountData.type === null &&
             <>
                 <Text>Log in in to unlock additional feaures</Text>
             </>
@@ -158,7 +159,7 @@ const MapPage = ({navigation, route}) => {
             {showCreate &&
             <>
 
-            <View>
+            <View style={styles.createBox}>
                 <TextInput
                     onChangeText={newText => setLocationName(newText)}
                     value = {locationName}
@@ -186,7 +187,7 @@ const MapPage = ({navigation, route}) => {
 
             {showLocation &&
             <>
-            <View>
+            <View style={styles.showBox}>
               <Text></Text>
 
               <Text></Text>
@@ -218,9 +219,16 @@ const styles = StyleSheet.create({
         height:'100%'
     },
     optionBar:{
+        position: 'absolute',
         flexDirection: 'row',
-        height: '10%',
+        height: '5%',
         width: '100%',
         backgroundColor: '#a9c1c8'
+    },
+    createBox:{
+        position: 'absolute'
+    },
+    showBox:{
+        position: 'absolute'
     }
 })
