@@ -1,6 +1,6 @@
 import MapView, { Marker} from 'react-native-maps'
 import { useState, useRef, useEffect, useContext } from 'react'
-import { getDocs, collection, doc, getDoc, addDoc, updateDoc } from 'firebase/firestore'
+import { getDocs, collection, doc, setDoc, updateDoc } from 'firebase/firestore'
 import * as Location from 'expo-location'
 import { db } from '../components/config'
 import { StatusContext } from "../context/context"
@@ -59,7 +59,7 @@ const MapPage = ({navigation, route}) => {
 
     useEffect( () => {
         async function getLocationMarkers(){ //Might not need to be a function + Might be better with snapshot
-            await getDocs(collection(db, "locationsMarkers"))
+            await getDocs(collection(db, "locationMarkers"))
             .then((n) => { 
                 const loadedCollections = []
                 n.forEach(doc => {
@@ -74,7 +74,7 @@ const MapPage = ({navigation, route}) => {
                 console.log(error)
              });   
         }
-        getLocationMarkers()
+        getLocationMarkers()  
     },[])
 
 
@@ -96,15 +96,14 @@ const MapPage = ({navigation, route}) => {
         }
         let newId = getNextId(markers)
         try{
-        await addDoc(doc(db, "locationMarkers"),{
+        await setDoc(doc(db, "locationMarkers", String(newId)),{
             ...newMarker,
-            id: newId
         })
-        await updateDoc(doc(db,'Users' ,statusContext.currentUser.uid),{
+        await updateDoc(doc(db,'users' ,statusContext.currentUser.uid),{
             locationId: newId
         })
-        statusContext.setCurrentUser({...statusContext.currentUser, locationId:newId})
-        setMarkers({...markers, newMarker})
+        statusContext.setAccountData({...statusContext.accountData, locationId:newId})
+        setMarkers([...markers, newMarker])
         }
         catch(error){
             console.log("sad error : ", error)
@@ -112,8 +111,13 @@ const MapPage = ({navigation, route}) => {
 
     }
 
-    function onMarkerPressed(){
-        alert("You pressed a marker")
+    function onMarkerPressed(locationData){
+        setShowLocation(true)
+        setLocationName(locationData.locationName)
+        setLocationDesc(locationData.locationDesc)
+        statusContext.setLocationData({...locationData})
+        //setProgressBar
+
     }
 
     return( 
@@ -130,8 +134,8 @@ const MapPage = ({navigation, route}) => {
                     <Marker
                     coordinate={marker.coordinate}
                     key={marker.key}
-                    title={marker.title}
-                    onPress={onMarkerPressed}
+                    title={marker.locationName}
+                    onPress={() => onMarkerPressed(marker)}
                     />
                 ))}
             </MapView>
@@ -154,7 +158,7 @@ const MapPage = ({navigation, route}) => {
 
             { statusContext.accountData.type === null &&
             <>
-                <Text>Log in in to unlock additional feaures</Text>
+                <Text>Log in to unlock additional feaures</Text>
             </>
             }
             </View>
@@ -191,9 +195,9 @@ const MapPage = ({navigation, route}) => {
             {showLocation &&
             <>
             <View style={styles.showBox}>
-              <Text></Text>
+              <Text>{locationName}</Text>
 
-              <Text></Text>
+              <Text>{locationDesc}</Text>
 
                 <TouchableOpacity
                 onPress={() => setShowCreate(!showLocation)}
@@ -202,7 +206,7 @@ const MapPage = ({navigation, route}) => {
                 </TouchableOpacity>
 
                 <TouchableOpacity
-                onPress={navigation.navigate("recipeView")}
+                onPress={navigation.navigate("guessListView", )}
                 >
                     <Text style={styles.backgroundText}>Open</Text> 
                 </TouchableOpacity>
