@@ -103,7 +103,7 @@ const MapPage = ({navigation, route}) => {
             locationId: newId
         })
         statusContext.setAccountData({...statusContext.accountData, locationId:newId})
-        setMarkers([...markers, newMarker])
+        setMarkers([...markers, {...newMarker, id:newId}])
         }
         catch(error){
             console.log("sad error : ", error)
