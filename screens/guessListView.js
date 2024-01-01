@@ -13,7 +13,7 @@ const GuessListView = ({navigation, route}) => {
     const list = difficulty? easyList : hardList
 
     useEffect( () => {
-        const scores = statusContext.scores[locationId]
+        const scores = statusContext.accountData.scores[statusContext.locationData.id]
         setEasyList((statusContext.locationData.recipes.easy).map((n) => matchRecipeScore(scores, n)))
         setHardList((statusContext.locationData.recipes.hard).map((n) => matchRecipeScore(scores, n)))
     },[])
