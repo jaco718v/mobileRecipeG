@@ -6,7 +6,7 @@ import { initializeAuth, getReactNativePersistence } from 'firebase/auth'
 import  ReactNativeAsyncStorage from '@react-native-async-storage/async-storage';
 
 import LoginPage from './screens/loginView';
-import SignUpPage from './screens/singUpView';
+import SignUpPage from './screens/signUpView';
 import MapPage from './screens/mapView';
 
 export default function App() {
