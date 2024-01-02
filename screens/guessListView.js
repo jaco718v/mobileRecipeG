@@ -1,31 +1,60 @@
 import { TouchableOpacity, View, Text, TextInput, StyleSheet, Image } from 'react-native'
-import { doc, updateDoc } from 'firebase/firestore'
+import { doc, updateDoc, getDocs, collection } from 'firebase/firestore'
 import { db, storage } from '../components/config'
 import * as ImagePicker from "expo-image-picker"
 import { StatusContext } from "../context/context"
 import { useState, useEffect, useContext } from 'react'
-import { MaterialIcons } from '@expo/vector-icons'
+import { MaterialIcons, AntDesign } from '@expo/vector-icons'
 import { ref, uploadBytes, getDownloadURL} from "firebase/storage"
 
 const GuessListView = ({navigation, route}) => {
     const statusContext = useContext(StatusContext)
     const [difficulty, setDifficulty] = useState(false)
-    const [easyList, setEasyList] = useState([])
-    const [hardList , setHardList] = useState([])
+    const [guessTextList, setGuessTextList] = useState([])
+    const [guessImageList , setGuessImageList] = useState([])
     const [imagePath, setImagePath] = useState(null)
     const [showImage, setShowImage] = useState(false)
-    const list = difficulty? easyList : hardList
+    const list = difficulty? guessTextList : guessImageList
 
     useEffect( () => {
-        const scores = statusContext.accountData.scores[statusContext.locationData.id]
-        setEasyList((statusContext.locationData.recipes.easy).map((n) => matchRecipeScore(scores, n)))
-        setHardList((statusContext.locationData.recipes.hard).map((n) => matchRecipeScore(scores, n)))
-    },[])
+        const scoreRef = collection(db, "users", statusContext.currentUser, "history", String(statusContext.locationData.id), "scores")
+        const textGuessRef = collection(db, "locationMarkers", String(statusContext.locationData.id), "recipes", 'textGuess')
+        const imageGuessRef = collection(db, "locationMarkers", String(statusContext.locationData.id), "recipes", 'imageGuess')
+        async function getCollection(collectionRef, setFunction){ 
+            await getDocs(collectionRef)
+            .then((n) => { 
+                const loadedCollections = []
+                n.forEach(doc => {
+                const collectionId = doc.id
+                const collectionData = doc.data()
+                loadedCollections.push({id: collectionId, ...collectionData})
+                setFunction([...loadedCollections])
+                })
+                console.log("Data loaded")
+                })
+            .catch((error) => {
+                console.log(error)
+             });   
+        }
+        
+        
+        getCollection(textGuessRef, setGuessTextList)
+        getCollection(imageGuessRef, setGuessImageList)
+        getCollection(scoreRef, setScoreList)
+  
+      },[])
+  
+      useEffect( () => {
+        setGuessTextList((guessTextList).map((n) => matchRecipeScore(scoreList, n)))
+        setGuessImageList((guessImageList).map((n) => matchRecipeScore(scoreList, n)))
+      },[scoreList])
+
 
 
     function matchRecipeScore(scores, guessRecipe){
-        if(scores[guessRecipe.id]){
-            return {...guessRecipe, score: scores[guessRecipe.id].score, hasImage:scores[guessRecipe.id].hasImage, taken: true }
+        const scoreIndex = scores.findIndex((n) => n.id === guessRecipe.id)
+        if(scoreIndex != -1){
+            return {...guessRecipe, score: scores[scoreIndex].score, hasImage:scores[scoreIndex].hasImage, taken: true }
         } else {
             return {...guessRecipe, score: 0, taken: false}
         }
@@ -53,13 +82,13 @@ const GuessListView = ({navigation, route}) => {
         const locationId = statusContext.locationData.id
         const storageRef = ref(storage,`${userId}/${locationId}/${recipeId}.jpg`)
         uploadBytes(storageRef, blob).then((snapshot) => {
-          updateHasImage()
+          updateHasImage(recipeId)
           alert("image uploaded")
         })
       }
 
-      async function updateHasImage(){
-        await updateDoc(doc(db, "users", statusContext.currentUser, "scores" , String(statusContext.locationData.id) ),{
+      async function updateHasImage(docId){
+        await updateDoc(doc(db, "users", statusContext.currentUser, "history" , String(statusContext.locationData.id), "scores", String(docId) ),{
           hasImage:true
          }).catch((error) => {
           console.log(error)
@@ -94,7 +123,7 @@ const GuessListView = ({navigation, route}) => {
             <>
 
                 <View>
-                    <TouchableOpacity style={styles.imageContainer}> 
+                    <TouchableOpacity style={styles.imageContainer} onPress={setShowImage(false)}> 
                         <Image source={{uri:imagePath}}/> 
                     </TouchableOpacity>
                 </View>
@@ -108,23 +137,20 @@ const GuessListView = ({navigation, route}) => {
                 <View>
                     <Text style={styles.listItem} onPress={()=>{
                         if(!recipe.item.score)
-                            difficulty? navigation.navigate("guessHardPage", {guessContent: recipe.item}) : navigation.navigate("guessEasyPage", {guessContent: recipe.item}) }}>
+                            difficulty? navigation.navigate("guessTextPage", {guessContent: recipe.item}) : navigation.navigate("guessImagePage", {guessContent: recipe.item}) }}>
                         {recipe.item.name} 
                     </Text>
-                    {   recipe.item.score &&
-                        <>
-                        <Text>{recipe.item.score}</Text>
-                        </>
 
-                    }
                     
                     { recipe.item.taken &&
                     <>
-                        <MaterialIcons name={recipe.item.imageId? "camera" : 'camerao'} 
-                        onPress={recipe.item.imageId? () => downloadAndDisplayImage(recipe.item.id) : useCamera(recipe.item.id)}
+
+                        <Text>{recipe.item.score}</Text>
+                        
+                        <AntDesign name={recipe.item.imageId? "camera" : 'camerao'} 
+                        onPress={recipe.item.imageId? () => downloadAndDisplayImage(recipe.item.id) : () => useCamera(recipe.item.id)}
                         size={12}/>
                     </>
-
                     }
                     
                     
