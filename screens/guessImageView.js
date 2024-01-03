@@ -1,13 +1,16 @@
-import { StyleSheet, Text, View, Image } from 'react-native-web'
+import { StyleSheet, Text, View, Image } from 'react-native'
 import { useState } from 'react'
 import { PanGestureHandler, GestureHandlerRootView } from 'react-native-gesture-handler'
 import Animated, { useSharedValue, useAnimatedGestureHandler, useAnimatedStyle, withSpring, getRelativeCoords, useAnimatedRef } from 'react-native-reanimated'
 
+
 const GuessImagePage = ({navigation, route}) => {
-    const [guessOptions, setGuessOptions] = useState([])
+    const [guessOptions, setGuessOptions] = useState([
+        {name:"bob", id: 0}
+    ])
     const animatedRef = useAnimatedRef() // <Animated.View ref={animatedRef} /> mb
 
-    const GuessItem = ({guessOption}) => {
+    const GuessItem = ({guessOption, animatedRef}) => {
 
         const translateX = useSharedValue(0)
         const translateY = useSharedValue(0)
@@ -22,9 +25,9 @@ const GuessImagePage = ({navigation, route}) => {
                 translateY.value = context.translateY + event.translationY
             },
             onEnd:(event) => {
-                testValue = getRelativeCoords(animatedRef, event.absoluteX, event.absoluteY)
+                const testValue = getRelativeCoords(animatedRef, event.absoluteX, event.absoluteY)
                 console.log(testValue)
-                //Logic here
+                
             }
         })
         
@@ -40,7 +43,7 @@ const GuessImagePage = ({navigation, route}) => {
         return (
             <PanGestureHandler onGestureEvent={onGestureEvent}>
                 <Animated.View style={[animateStyle]}>
-                    <Text>{guessOption}</Text>
+                    <Text>{guessOption.name}</Text>
                 </Animated.View>
             </PanGestureHandler>
         )
@@ -48,13 +51,11 @@ const GuessImagePage = ({navigation, route}) => {
     }
 
 
-
-
     return (
         <GestureHandlerRootView style={styles.rootView}>
             <View style={styles.container} ref={animatedRef}>
                 {guessOptions.map((option) => (
-                    <GuessItem key={option.id} guessOption={option}></GuessItem>
+                    <GuessItem key={option.id} guessOption={option} animatedRef={animatedRef}></GuessItem>
                 ))}
             </View>
         </GestureHandlerRootView>

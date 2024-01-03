@@ -199,18 +199,19 @@ const MapPage = ({navigation, route}) => {
 
               <Text>{locationDesc}</Text>
 
-                <TouchableOpacity
-                onPress={() => setShowCreate(!showLocation)}
-                >
-                    <Text style={styles.backgroundText}>Close</Text> 
+                <TouchableOpacity>
+                    <Text style={styles.backgroundText}
+                    onPress={() => setShowLocation(!showLocation)}
+                    >Close</Text> 
                 </TouchableOpacity>
 
-                <TouchableOpacity
-                onPress={navigation.navigate("guessListView", )}
-                >
-                    <Text style={styles.backgroundText}>Open</Text> 
+                <TouchableOpacity>
+                    <Text style={styles.backgroundText}
+                    onPress={() => navigation.navigate("guessListPage")}
+                    >Open</Text> 
                 </TouchableOpacity>
             </View>
+
             </>
             }
         </View>

@@ -1,4 +1,4 @@
-import { TouchableOpacity, View, Text, TextInput, StyleSheet, Image } from 'react-native'
+import { TouchableOpacity, View, Text, TextInput, StyleSheet, Image, FlatList } from 'react-native'
 import { doc, updateDoc, getDocs, collection } from 'firebase/firestore'
 import { db, storage } from '../components/config'
 import * as ImagePicker from "expo-image-picker"
@@ -7,9 +7,10 @@ import { useState, useEffect, useContext } from 'react'
 import { MaterialIcons, AntDesign } from '@expo/vector-icons'
 import { ref, uploadBytes, getDownloadURL} from "firebase/storage"
 
-const GuessListView = ({navigation, route}) => {
+const GuessListPage = ({navigation, route}) => {
     const statusContext = useContext(StatusContext)
-    const [difficulty, setDifficulty] = useState(false)
+    const [difficulty, setDifficulty] = useState(true)
+    const [scoreList, setScoreList] =useState([])
     const [guessTextList, setGuessTextList] = useState([])
     const [guessImageList , setGuessImageList] = useState([])
     const [imagePath, setImagePath] = useState(null)
@@ -17,9 +18,9 @@ const GuessListView = ({navigation, route}) => {
     const list = difficulty? guessTextList : guessImageList
 
     useEffect( () => {
-        const scoreRef = collection(db, "users", statusContext.currentUser, "history", String(statusContext.locationData.id), "scores")
-        const textGuessRef = collection(db, "locationMarkers", String(statusContext.locationData.id), "recipes", 'textGuess')
-        const imageGuessRef = collection(db, "locationMarkers", String(statusContext.locationData.id), "recipes", 'imageGuess')
+        const scoreRef = collection(db, "users", statusContext.currentUser.uid, "history", String(statusContext.locationData.id), "scores")
+        const textGuessRef = collection(db, "locationMarkers", String(statusContext.locationData.id), 'textGuess')
+        const imageGuessRef = collection(db, "locationMarkers", String(statusContext.locationData.id), 'imageGuess')
         async function getCollection(collectionRef, setFunction){ 
             await getDocs(collectionRef)
             .then((n) => { 
@@ -75,10 +76,10 @@ const GuessListView = ({navigation, route}) => {
         .catch(error => alert('Camera error: '+ error))
     }
 
-    async function uploadImage(recipeId){
+    async function uploadImage(recipeId){ //Maybe make useEffect
         const res = await fetch(imagePath)
         const blob = await res.blob()
-        const userId = statusContext.currentUser
+        const userId = statusContext.currentUser.uid
         const locationId = statusContext.locationData.id
         const storageRef = ref(storage,`${userId}/${locationId}/${recipeId}.jpg`)
         uploadBytes(storageRef, blob).then((snapshot) => {
@@ -88,7 +89,7 @@ const GuessListView = ({navigation, route}) => {
       }
 
       async function updateHasImage(docId){
-        await updateDoc(doc(db, "users", statusContext.currentUser, "history" , String(statusContext.locationData.id), "scores", String(docId) ),{
+        await updateDoc(doc(db, "users", statusContext.currentUser.uid, "history" , String(statusContext.locationData.id), "scores", String(docId) ),{
           hasImage:true
          }).catch((error) => {
           console.log(error)
@@ -111,11 +112,11 @@ const GuessListView = ({navigation, route}) => {
         <View>
 
             <TouchableOpacity onPress={() => setDifficulty(false)} >
-                <Text>Easy</Text>
+                <Text>Text</Text>
             </TouchableOpacity>
 
             <TouchableOpacity onPress={() => setDifficulty(true)} >
-                <Text>Hard</Text>
+                <Text>Image</Text>
             </TouchableOpacity>
 
 
@@ -155,8 +156,8 @@ const GuessListView = ({navigation, route}) => {
                     
                     
                     <MaterialIcons name={ recipe.item.score >= 50 ? "star" : "star-border"} size={12}/>
-                    <MaterialIcons name={ recipe.item.score >= 75 ? "star" : "star-border"} size={12}/>
-                    <MaterialIcons name={ recipe.item.score >= 105 ? "star" : "star-border"} size={12}/>
+                    <MaterialIcons name={ recipe.item.score >= 80 ? "star" : "star-border"} size={12}/>
+                    <MaterialIcons name={ recipe.item.score >= 110 ? "star" : "star-border"} size={12}/>
                 </View>  
                         
                     
@@ -167,7 +168,7 @@ const GuessListView = ({navigation, route}) => {
     )
 }
 
-export default GuessListView
+export default GuessListPage
 
 const styles = StyleSheet.create({
     imageContainer: {
