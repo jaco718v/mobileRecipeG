@@ -10,7 +10,7 @@ import { ref, uploadBytes, getDownloadURL} from "firebase/storage"
 const GuessListPage = ({navigation, route}) => {
     const statusContext = useContext(StatusContext)
     const [difficulty, setDifficulty] = useState(true)
-    const [scoreList, setScoreList] =useState([])
+    //const [scoreList, setScoreList] =useState([])
     const [guessTextList, setGuessTextList] = useState([])
     const [guessImageList , setGuessImageList] = useState([])
     const [imagePath, setImagePath] = useState(null)
@@ -21,7 +21,8 @@ const GuessListPage = ({navigation, route}) => {
         const scoreRef = collection(db, "users", statusContext.currentUser.uid, "history", String(statusContext.locationData.id), "scores")
         const textGuessRef = collection(db, "locationMarkers", String(statusContext.locationData.id), 'textGuess')
         const imageGuessRef = collection(db, "locationMarkers", String(statusContext.locationData.id), 'imageGuess')
-        async function getCollection(collectionRef, setFunction){ 
+        
+        async function getCollections(collectionRef, setFunction, _scoreList){ 
             await getDocs(collectionRef)
             .then((n) => { 
                 const loadedCollections = []
@@ -29,26 +30,29 @@ const GuessListPage = ({navigation, route}) => {
                 const collectionId = doc.id
                 const collectionData = doc.data()
                 loadedCollections.push({id: collectionId, ...collectionData})
-                setFunction([...loadedCollections])
                 })
                 console.log("Data loaded")
+                if(setFunction === undefined){
+                    //setFunction([...loadedCollections])
+                    getCollections(textGuessRef, setGuessTextList, [...loadedCollections])
+                    getCollections(imageGuessRef, setGuessImageList, [...loadedCollections])
+                } else {
+                    setFunction(([...loadedCollections]).map((n) => matchRecipeScore(_scoreList, n)))
+                }
                 })
             .catch((error) => {
                 console.log(error)
              });   
         }
         
-        
-        getCollection(textGuessRef, setGuessTextList)
-        getCollection(imageGuessRef, setGuessImageList)
-        getCollection(scoreRef, setScoreList)
+        getCollections(scoreRef)
   
       },[])
   
-      useEffect( () => {
-        setGuessTextList((guessTextList).map((n) => matchRecipeScore(scoreList, n)))
-        setGuessImageList((guessImageList).map((n) => matchRecipeScore(scoreList, n)))
-      },[scoreList])
+    //   useEffect( () => {
+    //     setGuessTextList((guessTextList).map((n) => matchRecipeScore(scoreList, n)))
+    //     setGuessImageList((guessImageList).map((n) => matchRecipeScore(scoreList, n)))
+    //   },[scoreList])
 
 
 

@@ -1,16 +1,36 @@
 import { StyleSheet, Text, View, Image } from 'react-native'
-import { useState } from 'react'
+import { useState, useEffect, useContext } from 'react'
+import { StatusContext } from "../context/context"
 import { PanGestureHandler, GestureHandlerRootView } from 'react-native-gesture-handler'
 import Animated, { useSharedValue, useAnimatedGestureHandler, useAnimatedStyle, withSpring, getRelativeCoords, useAnimatedRef } from 'react-native-reanimated'
 
 
 const GuessImagePage = ({navigation, route}) => {
-    const [guessOptions, setGuessOptions] = useState([
-        {name:"bob", id: 0}
-    ])
-    const animatedRef = useAnimatedRef() // <Animated.View ref={animatedRef} /> mb
+    const guessOptions = {numberOfImages: 5, name: 'Flub', id:4} //route.params?.guessOptions
+    const statusContext = useContext(StatusContext)
+    const [guessImages, setGuessImages] = useState([])
+    const animatedRef = useAnimatedRef() 
+    const [images, setImages] = useState([])
 
-    const GuessItem = ({guessOption, animatedRef}) => {
+
+    useEffect (() => {
+        downloadImages()
+    })
+
+    async function downloadImages(){
+        const locationId = statusContext.locationData.id
+            for(let i = 0; i<guessOptions.numberOfImages; i++){
+            getDownloadURL(ref(storage, `${locationId}/${guessOptions.id}/${i}.jpg`))
+            .then((url) => {
+                setImages([...imagePaths, {image:url, id:i}])
+            }).catch((error) => {
+            console.log("fejl i image dowload " + error)
+            })
+        }
+      }
+
+
+    const GuessItem = ({images}) => {
 
         const translateX = useSharedValue(0)
         const translateY = useSharedValue(0)
@@ -25,8 +45,8 @@ const GuessImagePage = ({navigation, route}) => {
                 translateY.value = context.translateY + event.translationY
             },
             onEnd:(event) => {
-                const testValue = getRelativeCoords(animatedRef, event.absoluteX, event.absoluteY)
-                console.log(testValue)
+                const coordinates = getRelativeCoords(animatedRef, event.absoluteX, event.absoluteY)
+                
                 
             }
         })
@@ -43,7 +63,7 @@ const GuessImagePage = ({navigation, route}) => {
         return (
             <PanGestureHandler onGestureEvent={onGestureEvent}>
                 <Animated.View style={[animateStyle]}>
-                    <Text>{guessOption.name}</Text>
+                    <Image></Image>
                 </Animated.View>
             </PanGestureHandler>
         )
@@ -55,7 +75,7 @@ const GuessImagePage = ({navigation, route}) => {
         <GestureHandlerRootView style={styles.rootView}>
             <View style={styles.container} ref={animatedRef}>
                 {guessOptions.map((option) => (
-                    <GuessItem key={option.id} guessOption={option} animatedRef={animatedRef}></GuessItem>
+                    <GuessItem key={option.id} guessOption={option}></GuessItem>
                 ))}
             </View>
         </GestureHandlerRootView>

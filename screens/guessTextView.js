@@ -1,15 +1,19 @@
 import { Button, StyleSheet, Text, View } from 'react-native'
-import { useEffect, useState } from 'react'
+import { useEffect, useState,useContext } from 'react'
+import {StatusContext} from '../context/context'
 import { db } from '../components/config'
 import { doc, getDoc, setDoc} from 'firebase/firestore'
 import { PanGestureHandler, GestureHandlerRootView } from 'react-native-gesture-handler'
-import Animated, { useSharedValue, useAnimatedGestureHandler, useAnimatedStyle, withSpring, getRelativeCoords, useAnimatedRef } from 'react-native-reanimated'
+import Animated, { useSharedValue, useAnimatedGestureHandler, useAnimatedStyle, getRelativeCoords, useAnimatedRef, runOnJS } from 'react-native-reanimated'
 
 const GuessTextPage = ({navigation, route}) => {
     const recipeData = route.params?.guessContent
+    const statusContext = useContext(StatusContext)
     const [guessOptions, setGuessOptions] = useState([])
+    const [showScore, setShowScore] = useState(false)
+    const [score, setScore] = useState(null)
     const animatedRef = useAnimatedRef()
-    const answers = []
+    let answers = []
 
     useEffect (() => {
         const dummyRef = doc(db,"dummyAnswers", "text", )
@@ -35,26 +39,26 @@ const GuessTextPage = ({navigation, route}) => {
         const combinedList = [...dummyCopy, ...ingredients]
         combinedList.sort((a, b) => 0.5 - Math.random())
         const updatedList = combinedList.map((n, index) =>  {return {name: n, id: index }})
-        console.log(updatedList)
         setGuessOptions([...updatedList])
         }
     }
 
     function moveAnswer(coordinates, id){
-        if(coordinates.y > 500){
-            if(answers.find((n) => n.id === id) == -1){
-                answers.push(guessOptions.find((n) => n.id === id))
+        if(coordinates.y > 400){   
+            if(answers.find((n) => n.id === id) === undefined){
+                answers = [...answers, guessOptions.find((n) => n.id === id)]
+
         }}else{
-            if(answers.find((n) => n.id === id) != -1){
-                answers.push(guessOptions.filter((n) => n.id != id))
+            if(answers.find((n) => n.id === id) != undefined){
+                answers = [...(answers.filter((n) => n.id != id))]
+                
         }}
     }
-
 
     async function checkAndSubmitAnswers(){
         let rightAnswers = 0
         for(let i = 0; i < recipeData.ingredients.length; i++){
-            if(answers.find((n) => n.name === recipeData.ingredients[i]) != -1){
+            if(answers.find((n) => n.name === recipeData.ingredients[i]) != undefined){
                 rightAnswers++
             }
         }
@@ -62,22 +66,32 @@ const GuessTextPage = ({navigation, route}) => {
         if(answers.length < recipeData.ingredients.length){
             totalAnswers =  recipeData.ingredients.length
         }
-
-        score = Math.floor((rightAnswers / totalAnswers )*100)
+    
+        const score = Math.floor((rightAnswers / totalAnswers )*100)
         
-        const scoreRef = doc(db, "users", statusContext.currentUser.uid, "history", String(statusContext.locationData.id), "scores", String())
-        await setDoc(scoreRef,{
-            score: score,
-            hasImage:false
-        })
-        navigation.navigate("guessListPage")
+        setShowScore(true)
+        setScore(score)
+
+        setTimeout(async () => {
+
+            const scoreRef = doc(db, "users", statusContext.currentUser.uid, "history", String(statusContext.locationData.id), "scores", String(recipeData.id))
+            await setDoc(scoreRef,{
+                score: score,
+                hasImage:false
+            })
+            navigation.navigate("guessListPage")
+
+        }, 2000)
+
+
     }
        
 
-    const GuessItem = ({guessOption}) => {
+    const GuessItem = ({guessOption, onMove}) => {
 
         const translateX = useSharedValue(0)
         const translateY = useSharedValue(0)
+
 
         const onGestureEvent = useAnimatedGestureHandler({
             onStart:(_, context) => {
@@ -90,7 +104,8 @@ const GuessTextPage = ({navigation, route}) => {
             },
             onEnd:(event) => {
                 const coordinates = getRelativeCoords(animatedRef, event.absoluteX, event.absoluteY)
-                moveAnswer(coordinates, guessOption.id)
+                console.log(coordinates)
+                runOnJS(onMove)(coordinates, guessOption.id)
             }
         })
         
@@ -106,7 +121,7 @@ const GuessTextPage = ({navigation, route}) => {
         return (
             <PanGestureHandler onGestureEvent={onGestureEvent}>
                 <Animated.View style={[animateStyle]}>
-                    <Text>{guessOption.name}</Text>
+                    <Text> {guessOption.name} </Text>
                 </Animated.View>
             </PanGestureHandler>
         )
@@ -119,16 +134,25 @@ const GuessTextPage = ({navigation, route}) => {
     return (
         <GestureHandlerRootView style={styles.rootView}>
             <View style={styles.container} ref={animatedRef}>
+                <View style={styles.answerOptions}>
             {guessOptions.map((option) => (
-                    <GuessItem key={option.id} guessOption={option}></GuessItem>
+                    <GuessItem key={option.id} guessOption={option} onMove={moveAnswer}></GuessItem>
                 ))}
-
+            </View>
                 <Button
                 title='Submit'
                 onPress={checkAndSubmitAnswers}
                 />
-                    
-                
+
+                { showScore &&
+                <>
+                <View>
+                    <Text>Your score: {score}</Text>
+                </View>
+                </>
+                }
+
+              
             </View>
         </GestureHandlerRootView>
 
@@ -145,12 +169,24 @@ const styles  = StyleSheet.create({
         height: 100
     },
     container:{
-        flex: 1, 
+        flex: 1,
+        backgroundColor: '#fff',
+        alignItems: 'center',
+        justifyContent: 'center'
+    },
+    answerOptions:{
+        flexDirection: 'row', 
         backgroundColor: '#fff',
         alignItems: 'center',
         justifyContent: 'center'
     },
     rootView:{
         flex: 1
+    },
+    scoreBox:{
+        position:'absolute', 
+        backgroundColor: '#fff',
+        alignItems: 'center',
+        justifyContent: 'center'
     }
 })
