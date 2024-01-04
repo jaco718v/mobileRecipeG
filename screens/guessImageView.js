@@ -67,7 +67,6 @@ const GuessImagePage = ({navigation, route}) => {
                 </Animated.View>
             </PanGestureHandler>
         )
-
     }
 
 
