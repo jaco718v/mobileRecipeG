@@ -1,6 +1,8 @@
 import { StyleSheet, Text, View, Image } from 'react-native'
 import { useState, useEffect, useContext } from 'react'
+import { storage } from '../components/config'
 import { StatusContext } from "../context/context"
+import { ref, getDownloadURL} from "firebase/storage"
 import { PanGestureHandler, GestureHandlerRootView } from 'react-native-gesture-handler'
 import Animated, { useSharedValue, useAnimatedGestureHandler, useAnimatedStyle, withSpring, getRelativeCoords, useAnimatedRef } from 'react-native-reanimated'
 
@@ -10,25 +12,49 @@ const GuessImagePage = ({navigation, route}) => {
     const statusContext = useContext(StatusContext)
     const [guessImages, setGuessImages] = useState([])
     const animatedRef = useAnimatedRef() 
-    const [images, setImages] = useState([])
+    
 
 
     useEffect (() => {
-        downloadImages()
+        const testValue = createImageList(6, guessOptions.numberOfImages)
+        //downloadImages(testValue)
     })
 
-    async function downloadImages(){
+    async function downloadImages(imageData){
+        let imageRef = null
         const locationId = statusContext.locationData.id
-            for(let i = 0; i<guessOptions.numberOfImages; i++){
-            getDownloadURL(ref(storage, `${locationId}/${guessOptions.id}/${i}.jpg`))
+        imageData.sort((a, b) => 0.5 - Math.random())
+        for (let image in imageData){
+            if(image.type === 'dummy'){
+                imageRef = ref(storage, `dummy/${image.id}.jpg`)
+            }else{
+                imageRef = ref(storage, `${locationId}/${guessOptions.id}/${image.id}.jpg`)
+            }
+            getDownloadURL(imageRef)
             .then((url) => {
-                setImages([...imagePaths, {image:url, id:i}])
+                setGuessImages([...guessImages, {image:url, id:i}])
             }).catch((error) => {
             console.log("fejl i image dowload " + error)
             })
         }
       }
 
+    function createImageList(totalDummies, numberOfImages){
+        const dummyNumberList = []
+        for(let i = 0; i < totalDummies; i++){
+            dummyNumberList.push({id: i, type: 'dummy'})
+        }
+        const ingredientsNumberList = []
+        for(let i = 0; i < numberOfImages; i++){
+            ingredientsNumberList.push({id: i, type: 'real'})
+        }
+        dummyNumberList.sort((a, b) => 0.5 - Math.random()) //Not true random
+        for(let i = 0 ; i < (totalDummies - (9 - numberOfImages)); i++){
+            dummyNumberList.pop()
+        }   
+        return [...dummyNumberList, ...ingredientsNumberList].sort((a, b) => 0.5 - Math.random())
+    }
+    
 
     const GuessItem = ({images}) => {
 
@@ -74,7 +100,7 @@ const GuessImagePage = ({navigation, route}) => {
     return (
         <GestureHandlerRootView style={styles.rootView}>
             <View style={styles.container} ref={animatedRef}>
-                {guessOptions.map((option) => (
+                {guessImages.map((option) => (
                     <GuessItem key={option.id} guessOption={option}></GuessItem>
                 ))}
             </View>
