@@ -4,7 +4,7 @@ import { storage } from '../components/config'
 import { StatusContext } from "../context/context"
 import { ref, getDownloadURL} from "firebase/storage"
 import { PanGestureHandler, GestureHandlerRootView } from 'react-native-gesture-handler'
-import Animated, { useSharedValue, useAnimatedGestureHandler, useAnimatedStyle, withSpring, getRelativeCoords, useAnimatedRef } from 'react-native-reanimated'
+import Animated, { useSharedValue, useAnimatedGestureHandler, useAnimatedStyle, withSpring, getRelativeCoords, useAnimatedRef, runOnJS } from 'react-native-reanimated'
 
 
 const GuessImagePage = ({navigation, route}) => {
@@ -12,7 +12,9 @@ const GuessImagePage = ({navigation, route}) => {
     const statusContext = useContext(StatusContext)
     const [guessImages, setGuessImages] = useState([])
     const animatedRef = useAnimatedRef() 
-    
+    const [showScore, setShowScore] = useState(false)
+    const [score, setScore] = useState(null)
+    const [trash, setTrash] = useState([])
 
 
     useEffect (() => {
@@ -24,6 +26,7 @@ const GuessImagePage = ({navigation, route}) => {
         let imageRef = null
         const locationId = statusContext.locationData.id
         imageData.sort((a, b) => 0.5 - Math.random())
+        let counter = 0
         for (let image in imageData){
             if(image.type === 'dummy'){
                 imageRef = ref(storage, `dummy/${image.id}.jpg`)
@@ -32,7 +35,7 @@ const GuessImagePage = ({navigation, route}) => {
             }
             getDownloadURL(imageRef)
             .then((url) => {
-                setGuessImages([...guessImages, {image:url, id:i}])
+                setGuessImages([...guessImages, {url:url, id:counter++, type:image.type}])
             }).catch((error) => {
             console.log("fejl i image dowload " + error)
             })
@@ -55,8 +58,58 @@ const GuessImagePage = ({navigation, route}) => {
         return [...dummyNumberList, ...ingredientsNumberList].sort((a, b) => 0.5 - Math.random())
     }
     
+    function moveToTrash(image, coordinates){
+        if(funk){
+            setTrash([...trash, image])
+            setGuessImages([guessImages.filter((n)=> n.id != image.id)])
+        }
+    }
 
-    const GuessItem = ({images}) => {
+    function undoTrash(){
+        if(trash.length > 0 ){
+        setGuessImages([...guessImages, trash[0]])
+        const newList = [...trash]
+        newList.shift()
+        setTrash([...newList])
+        }
+    }
+
+    async function checkAndSubmitAnswers(){
+        let rightAnswers = 0
+        for( const image in guessImages){
+            if(image.type === 'real'){
+                rightAnswers++
+            }
+        }
+
+
+        let totalAnswers = guessImages.length
+        if(guessImages.length < guessOptions.numberOfImages){
+            totalAnswers =  guessOptions.numberOfImages
+        }
+        
+
+        const score = Math.floor((rightAnswers / totalAnswers )*100)
+        
+        setShowScore(true)
+        setScore(score)
+
+        setTimeout(async () => {
+
+            const scoreRef = doc(db, "users", statusContext.currentUser.uid, "history", String(statusContext.locationData.id), "scores", String(recipeData.id))
+            await setDoc(scoreRef,{
+                score: score,
+                hasImage:false
+            })
+            navigation.navigate("guessListPage")
+
+        }, 2000)
+
+
+    }
+
+
+    const GuessItem = ({image, onMove}) => {
 
         const translateX = useSharedValue(0)
         const translateY = useSharedValue(0)
@@ -72,7 +125,7 @@ const GuessImagePage = ({navigation, route}) => {
             },
             onEnd:(event) => {
                 const coordinates = getRelativeCoords(animatedRef, event.absoluteX, event.absoluteY)
-                
+                runOnJS(onMove)(coordinates)
                 
             }
         })
@@ -89,7 +142,7 @@ const GuessImagePage = ({navigation, route}) => {
         return (
             <PanGestureHandler onGestureEvent={onGestureEvent}>
                 <Animated.View style={[animateStyle]}>
-                    <Image></Image>
+                    <Image source={image.url}></Image>
                 </Animated.View>
             </PanGestureHandler>
         )
@@ -98,12 +151,28 @@ const GuessImagePage = ({navigation, route}) => {
 
     return (
         <GestureHandlerRootView style={styles.rootView}>
-            <View style={styles.container} ref={animatedRef}>
-                {guessImages.map((option) => (
-                    <GuessItem key={option.id} guessOption={option}></GuessItem>
-                ))}
+        <View style={styles.container} ref={animatedRef}>
+            <View style={styles.answerOptions}>
+                {guessImages.map((image) => (
+                <GuessItem key={image.id} image={image} onMove={moveToTrash}></GuessItem>
+            ))}
+        </View>
+            <Button
+            title='Submit'
+            onPress={checkAndSubmitAnswers}
+            />
+
+            { showScore &&
+            <>
+            <View>
+                <Text>Your score: {score}</Text>
             </View>
-        </GestureHandlerRootView>
+            </>
+            }
+
+          
+        </View>
+    </GestureHandlerRootView>
 
     )
 }
@@ -116,9 +185,13 @@ const styles  = StyleSheet.create({
         flex: 1, 
         backgroundColor: '#fff',
         alignItems: 'center',
-        justifyContent: 'center'
+        justifyContent: 'center',
+        flexWrap: 'wrap'
     },
     rootView:{
         flex: 1
+    },
+    answerOptions:{
+        flexBasis: '33.333333%'
     }
 })
