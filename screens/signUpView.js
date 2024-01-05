@@ -6,6 +6,7 @@ import BouncyCheckbox from "react-native-bouncy-checkbox";
 import { db } from "../components/config";
 import { useState, useContext } from "react";
 import { getAuth } from "firebase/auth";
+import { RadioButton } from 'react-native-paper';
 
 const SignUpPage = ({navigation, route}) => {
     const [enteredEmail, setEnteredEmail] = useState("testtest@gmail.com")
@@ -48,6 +49,18 @@ const SignUpPage = ({navigation, route}) => {
                 value={enteredPassword}
             />
 
+
+            <RadioButton
+              value="User Account"
+              status={ accountType ? 'unchecked' : 'checked' }
+              onPress={() => setAccountType(false)}
+            />
+            <RadioButton
+              value="Resturant account"
+              status={ accountType ? 'checked' : 'unchecked' }
+              onPress={() => setAccountType(true)}
+            />
+
             <BouncyCheckbox
                 text = "Resturant account"
                 onPress={() => setAccountType(!accountType)}
@@ -55,7 +68,7 @@ const SignUpPage = ({navigation, route}) => {
 
             {   accountType &&
                 <>
-                <Text>As a resturant account you'll be able to create and edit your locations, but you won't be able to guess recipes</Text>
+                <Text>As a resturant account you'll be able to create and edit your location, but you won't be able to guess recipes</Text>
                 </>
             }
                 

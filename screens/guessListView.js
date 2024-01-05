@@ -41,7 +41,7 @@ const GuessListPage = ({navigation, route}) => {
         }
     }
 
-    async function useCamera(recipeId){
+    async function useCamera(recipe){
         const result = await ImagePicker.requestCameraPermissionsAsync()
         if(result.granted === false){
             alert('No camera access')
@@ -50,27 +50,28 @@ const GuessListPage = ({navigation, route}) => {
         .then(response => {
             if(!response.canceled){
                 setImagePath(response.assets[0].uri)
-                uploadImage(recipeId)
+                uploadImage(recipe)
             }
         })
         .catch(error => alert('Camera error: '+ error))
     }
 
-    async function uploadImage(recipeId){ //Maybe make useEffect
+    async function uploadImage(recipe){ //Maybe make useEffect
         const res = await fetch(imagePath)
         const blob = await res.blob()
         const userId = statusContext.currentUser.uid
         const locationId = statusContext.locationData.id
-        const storageRef = ref(storage,`meal-${userId}-${locationId}-${recipeId}.jpg`)
+        const storageRef = ref(storage,`meal-${userId}-${locationId}-${recipe.id}.jpg`)
         uploadBytes(storageRef, blob).then((snapshot) => {
-          updateHasImage(recipeId)
+          updateHasImage(recipe)
           alert("image uploaded")
         })
       }
 
-      async function updateHasImage(docId){
-        await updateDoc(doc(db, "users", statusContext.currentUser.uid, "history" , String(statusContext.locationData.id), "scores", String(docId) ),{
-          hasImage:true
+      async function updateHasImage(recipe){
+        await updateDoc(doc(db, "users", statusContext.currentUser.uid, "history" , String(statusContext.locationData.id), "scores", String(recipe.id) ),{
+          hasImage:true,
+          score: recipe.score + 30
          }).catch((error) => {
           console.log(error)
         })
@@ -129,7 +130,7 @@ const GuessListPage = ({navigation, route}) => {
                         <Text>{recipe.item.score}</Text>
                         
                         <AntDesign name={recipe.item.imageId? "camera" : 'camerao'} 
-                        onPress={recipe.item.imageId? () => downloadAndDisplayImage(recipe.item.id) : () => useCamera(recipe.item.id)}
+                        onPress={recipe.item.imageId? () => downloadAndDisplayImage(recipe.item.id) : () => useCamera(recipe.item)}
                         size={12}/>
                     </>
                     }

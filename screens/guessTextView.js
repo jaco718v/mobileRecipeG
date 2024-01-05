@@ -146,7 +146,7 @@ const GuessTextPage = ({navigation, route}) => {
 
                 { showScore &&
                 <>
-                <View>
+                <View style={styles.scoreBox}>
                     <Text>Your score: {score}</Text>
                 </View>
                 </>
@@ -187,6 +187,8 @@ const styles  = StyleSheet.create({
         position:'absolute', 
         backgroundColor: '#fff',
         alignItems: 'center',
-        justifyContent: 'center'
+        justifyContent: 'center',
+        width:'100%',
+        height: '100%'
     }
 })

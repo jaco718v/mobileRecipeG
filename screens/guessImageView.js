@@ -9,8 +9,7 @@ import Animated, { useSharedValue, useAnimatedGestureHandler, useAnimatedStyle, 
 import { SimpleLineIcons } from '@expo/vector-icons'
 
 const GuessImagePage = ({navigation, route}) => {
-    const guessOptions = {numberOfImages: 5, name: 'Fritt', id:0} //route.params?.guessOptions
-    const currentuserUid = 'pxacYsX0cOXAqr7f50oAku90q6b2' //Temp
+    const guessOptions = route.params?.guessOptions
     const statusContext = useContext(StatusContext)
     const [guessImages, setGuessImages] = useState([])
     const animatedRef = useAnimatedRef() 
@@ -20,14 +19,14 @@ const GuessImagePage = ({navigation, route}) => {
 
 
     useEffect (() => {
-        const testValue = createImageList(6, guessOptions.numberOfImages)
-        
-        downloadImages(testValue)
+        const totalDummies = 6
+        const mixedArray = createImageList(totalDummies, guessOptions.numberOfImages)
+        downloadImages(mixedArray)
     },[])
 
     async function downloadImages(imageData){
         let imageRef = null
-        const locationId = 1//statusContext.locationData.id
+        const locationId = statusContext.locationData.id
         let counter = 0
         let imageList = []
         for (let image of imageData){
@@ -36,7 +35,7 @@ const GuessImagePage = ({navigation, route}) => {
             }else{
                 imageRef = ref(storage, `ingredient-${locationId}-${guessOptions.id}-${image.id}.jpg`)}
             const singleImage = await getDownloadURL(imageRef)
-            imageList = [...imageList, {url:singleImage, id:counter++, type:image.type}]
+            imageList = [...imageList, {url:singleImage, id:counter++, type:image.type, visible: true}]
         
         }
         setGuessImages([...imageList])
@@ -59,35 +58,33 @@ const GuessImagePage = ({navigation, route}) => {
     }
     
     function moveToTrash(image){
-        if(funk){
-            setTrash([...trash, image])
-            setGuessImages([guessImages.filter((n)=> n.id != image.id)])
-        }
+            setTrash([...trash, {...image}])
+            setGuessImages(guessImages.map((n) => n.id === image.id ? {...n, visible:false} : n)) 
     }
 
     function undoTrash(){
-        if(trash.length > 0 ){
-        setGuessImages([...guessImages, trash[0]])
-        const newList = [...trash]
-        newList.shift()
-        setTrash([...newList])
+        if(trash.length > 0 ){ 
+            const firstIndex = {...trash[0]}
+            setGuessImages(guessImages.map((n) => n.id === firstIndex.id ? {...n, visible:true} : n))
+            setTrash(prevImages => prevImages.filter((n) => n.id != firstIndex.id))
         }
     }
 
     async function checkAndSubmitAnswers(){
         let rightAnswers = 0
-        for( const image in guessImages){
-            if(image.type === 'real'){
+        let totalAnswers = 0
+        for( const image of guessImages){
+            if(image.type === 'real' && image.visible){
                 rightAnswers++
+            } 
+            if(image.visible){
+                totalAnswers++
             }
-        }
+        } 
 
-
-        let totalAnswers = guessImages.length
-        if(guessImages.length < guessOptions.numberOfImages){
+        if(totalAnswers < guessOptions.numberOfImages){
             totalAnswers =  guessOptions.numberOfImages
         }
-        
 
         const score = Math.floor((rightAnswers / totalAnswers )*100)
         
@@ -96,7 +93,7 @@ const GuessImagePage = ({navigation, route}) => {
 
         setTimeout(async () => {
 
-            const scoreRef = doc(db, "users", currentuserUid, "history", String(locationId), "scores", String(recipeData.id))
+            const scoreRef = doc(db, "users", statusContext.currentUser.uid, "history", String(locationId), "scores", String(recipeData.id))
             await setDoc(scoreRef,{
                 score: score,
                 hasImage:false
@@ -126,8 +123,14 @@ const GuessImagePage = ({navigation, route}) => {
             onEnd:(event) => {
                 const coordinates = getRelativeCoords(animatedRef, event.absoluteX, event.absoluteY)
                 console.log(coordinates)
+                if(coordinates.x > 20 && coordinates.x < 150 && coordinates.y > 500){
+                    runOnJS(onMove)(image)
+                } else {
+                    translateX.value = withSpring(0)
+                    translateY.value = withSpring(0)
+                }
                 //if(coordstuff)
-                //runOnJS(onMove)(image)
+                //
                 //withSpring if not
             }
         })
@@ -144,7 +147,7 @@ const GuessImagePage = ({navigation, route}) => {
         return (
             <PanGestureHandler onGestureEvent={onGestureEvent}>
                 <Animated.View style={[animateStyle]}>
-                    <View style={styles.answerOptions}>
+                    <View style={image.visible? styles.answerOptions : styles.answerInvisible}>
                         <Image source={{uri:image.url}} style={styles.imgStyle}></Image>
                     </View>
                 </Animated.View>
@@ -176,7 +179,7 @@ const GuessImagePage = ({navigation, route}) => {
 
                 { showScore &&
                 <>
-                <View>
+                <View styles={styles.scoreBox}>
                     <Text>Your score: {score}</Text>
                 </View>
                 </>
@@ -213,10 +216,21 @@ const styles  = StyleSheet.create({
         marginBottom: -20,
         marginTop: -5
     },
+    answerInvisible:{
+        flexBasis: '29.4%',
+        top: -20,
+        flexGrow: 0, 
+        flexShrink: 0,                     
+        paddingRight: 10,
+        paddingLeft: 10,
+        paddingBottom: -10,
+        marginBottom: -20,
+        marginTop: -5,
+        opacity: 0
+    },
     imgStyle:{
         width: 90,
-        height: 90,
-        
+        height: 90,    
     },
     test:{
         position: 'absolute',
@@ -230,5 +244,13 @@ const styles  = StyleSheet.create({
         width: 90 ,
         justifyContent: 'center',
         marginRight: 20    
+    },
+    scoreBox:{
+        position:'absolute', 
+        backgroundColor: '#fff',
+        alignItems: 'center',
+        justifyContent: 'center',
+        width:'100%',
+        height: '100%'
     }
 })
