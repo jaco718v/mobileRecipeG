@@ -58,7 +58,7 @@ const LoginPage = ({navigation, route}) => {
                 activeOpacity={1}
                 style={styles.container}
                 onPress={() => {
-                    if(statusContext.currentUser !== null){
+                    if(statusContext.currentUser !== null && statusContext.accountData.type){
                         navigation.navigate("mapPage")
                     }
                 }}

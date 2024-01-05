@@ -6,54 +6,30 @@ import { StatusContext } from "../context/context"
 import { useState, useEffect, useContext } from 'react'
 import { MaterialIcons, AntDesign } from '@expo/vector-icons'
 import { ref, uploadBytes, getDownloadURL} from "firebase/storage"
+import { useCollection } from 'react-firebase-hooks/firestore'
 
 const GuessListPage = ({navigation, route}) => {
     const statusContext = useContext(StatusContext)
     const [difficulty, setDifficulty] = useState(true)
-    //const [scoreList, setScoreList] =useState([])
-    const [guessTextList, setGuessTextList] = useState([])
-    const [guessImageList , setGuessImageList] = useState([])
+    const [scoreValues, scoreLoading, scoreError] = useCollection(collection(db, "users", statusContext.currentUser.uid, "history", String(statusContext.locationData.id), "scores"))
+    const scoreList = scoreValues?.docs.map((_doc) => ({..._doc.data(), id:_doc.id}))
+    const [textGuessValues, textGuessLoading, textGuessError] = useCollection(collection(db, "locationMarkers", String(statusContext.locationData.id), 'textGuess'))
+    const textGuessList = textGuessValues?.docs.map((_doc) => ({..._doc.data(), id:_doc.id}))
+    const [imageGuessValues, imageGuessLoading, imageGuessError] = useCollection(collection(db, "locationMarkers", String(statusContext.locationData.id), 'imageGuess'))
+    const imageGuessList = imageGuessValues?.docs.map((_doc) => ({..._doc.data(), id:_doc.id}))
+    const [scoredTextList, setScoredTextList] = useState([])
+    const [scoredImageList , setScoredImageList] = useState([])
     const [imagePath, setImagePath] = useState(null)
     const [showImage, setShowImage] = useState(false)
-    const list = difficulty? guessTextList : guessImageList
+    const list = difficulty? scoredTextList : scoredImageList
 
     useEffect( () => {
-        const scoreRef = collection(db, "users", statusContext.currentUser.uid, "history", String(statusContext.locationData.id), "scores")
-        const textGuessRef = collection(db, "locationMarkers", String(statusContext.locationData.id), 'textGuess')
-        const imageGuessRef = collection(db, "locationMarkers", String(statusContext.locationData.id), 'imageGuess')
-        
-        async function getCollections(collectionRef, setFunction, _scoreList){ 
-            await getDocs(collectionRef)
-            .then((n) => { 
-                const loadedCollections = []
-                n.forEach(doc => {
-                const collectionId = doc.id
-                const collectionData = doc.data()
-                loadedCollections.push({id: collectionId, ...collectionData})
-                })
-                console.log("Data loaded")
-                if(setFunction === undefined){
-                    //setFunction([...loadedCollections])
-                    getCollections(textGuessRef, setGuessTextList, [...loadedCollections])
-                    getCollections(imageGuessRef, setGuessImageList, [...loadedCollections])
-                } else {
-                    setFunction(([...loadedCollections]).map((n) => matchRecipeScore(_scoreList, n)))
-                }
-                })
-            .catch((error) => {
-                console.log(error)
-             });   
+        if(scoreList && textGuessList && imageGuessList){
+            setScoredTextList(([...textGuessList]).map((n) => matchRecipeScore(scoreList, n)))
+            setScoredImageList(([...imageGuessList]).map((n) => matchRecipeScore(scoreList, n)))
         }
-        
-        getCollections(scoreRef)
+      },[scoreValues, textGuessValues, imageGuessValues])
   
-      },[])
-  
-    //   useEffect( () => {
-    //     setGuessTextList((guessTextList).map((n) => matchRecipeScore(scoreList, n)))
-    //     setGuessImageList((guessImageList).map((n) => matchRecipeScore(scoreList, n)))
-    //   },[scoreList])
-
 
 
     function matchRecipeScore(scores, guessRecipe){
@@ -85,7 +61,7 @@ const GuessListPage = ({navigation, route}) => {
         const blob = await res.blob()
         const userId = statusContext.currentUser.uid
         const locationId = statusContext.locationData.id
-        const storageRef = ref(storage,`${userId}/${locationId}/${recipeId}.jpg`)
+        const storageRef = ref(storage,`meal-${userId}-${locationId}-${recipeId}.jpg`)
         uploadBytes(storageRef, blob).then((snapshot) => {
           updateHasImage(recipeId)
           alert("image uploaded")
@@ -103,7 +79,7 @@ const GuessListPage = ({navigation, route}) => {
     async function downloadAndDisplayImage(recipeId){
         const userId = statusContext.currentUser
         const locationId = statusContext.locationData.id
-        getDownloadURL(ref(storage, `${userId}/${locationId}/${recipeId}.jpg`))
+        getDownloadURL(ref(storage, `meal-${userId}-${locationId}-${recipeId}.jpg`))
         .then((url) => {
             setImagePath(url)
             setShowImage(true)

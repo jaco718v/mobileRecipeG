@@ -1,14 +1,16 @@
-import { StyleSheet, Text, View, Image } from 'react-native'
+import { StyleSheet, Text, View, Image, TouchableOpacity, Button } from 'react-native'
 import { useState, useEffect, useContext } from 'react'
 import { storage } from '../components/config'
+import { doc, setDoc } from 'firebase/firestore'
 import { StatusContext } from "../context/context"
 import { ref, getDownloadURL} from "firebase/storage"
 import { PanGestureHandler, GestureHandlerRootView } from 'react-native-gesture-handler'
 import Animated, { useSharedValue, useAnimatedGestureHandler, useAnimatedStyle, withSpring, getRelativeCoords, useAnimatedRef, runOnJS } from 'react-native-reanimated'
-
+import { SimpleLineIcons } from '@expo/vector-icons'
 
 const GuessImagePage = ({navigation, route}) => {
-    const guessOptions = {numberOfImages: 5, name: 'Flub', id:4} //route.params?.guessOptions
+    const guessOptions = {numberOfImages: 5, name: 'Fritt', id:0} //route.params?.guessOptions
+    const currentuserUid = 'pxacYsX0cOXAqr7f50oAku90q6b2' //Temp
     const statusContext = useContext(StatusContext)
     const [guessImages, setGuessImages] = useState([])
     const animatedRef = useAnimatedRef() 
@@ -19,27 +21,25 @@ const GuessImagePage = ({navigation, route}) => {
 
     useEffect (() => {
         const testValue = createImageList(6, guessOptions.numberOfImages)
-        //downloadImages(testValue)
-    })
+        
+        downloadImages(testValue)
+    },[])
 
     async function downloadImages(imageData){
         let imageRef = null
-        const locationId = statusContext.locationData.id
-        imageData.sort((a, b) => 0.5 - Math.random())
+        const locationId = 1//statusContext.locationData.id
         let counter = 0
-        for (let image in imageData){
+        let imageList = []
+        for (let image of imageData){
             if(image.type === 'dummy'){
-                imageRef = ref(storage, `dummy/${image.id}.jpg`)
+                imageRef = ref(storage, `dummy-${image.id}.jpg`)
             }else{
-                imageRef = ref(storage, `${locationId}/${guessOptions.id}/${image.id}.jpg`)
-            }
-            getDownloadURL(imageRef)
-            .then((url) => {
-                setGuessImages([...guessImages, {url:url, id:counter++, type:image.type}])
-            }).catch((error) => {
-            console.log("fejl i image dowload " + error)
-            })
+                imageRef = ref(storage, `ingredient-${locationId}-${guessOptions.id}-${image.id}.jpg`)}
+            const singleImage = await getDownloadURL(imageRef)
+            imageList = [...imageList, {url:singleImage, id:counter++, type:image.type}]
+        
         }
+        setGuessImages([...imageList])
       }
 
     function createImageList(totalDummies, numberOfImages){
@@ -58,7 +58,7 @@ const GuessImagePage = ({navigation, route}) => {
         return [...dummyNumberList, ...ingredientsNumberList].sort((a, b) => 0.5 - Math.random())
     }
     
-    function moveToTrash(image, coordinates){
+    function moveToTrash(image){
         if(funk){
             setTrash([...trash, image])
             setGuessImages([guessImages.filter((n)=> n.id != image.id)])
@@ -96,7 +96,7 @@ const GuessImagePage = ({navigation, route}) => {
 
         setTimeout(async () => {
 
-            const scoreRef = doc(db, "users", statusContext.currentUser.uid, "history", String(statusContext.locationData.id), "scores", String(recipeData.id))
+            const scoreRef = doc(db, "users", currentuserUid, "history", String(locationId), "scores", String(recipeData.id))
             await setDoc(scoreRef,{
                 score: score,
                 hasImage:false
@@ -125,8 +125,10 @@ const GuessImagePage = ({navigation, route}) => {
             },
             onEnd:(event) => {
                 const coordinates = getRelativeCoords(animatedRef, event.absoluteX, event.absoluteY)
-                runOnJS(onMove)(coordinates)
-                
+                console.log(coordinates)
+                //if(coordstuff)
+                //runOnJS(onMove)(image)
+                //withSpring if not
             }
         })
         
@@ -142,7 +144,9 @@ const GuessImagePage = ({navigation, route}) => {
         return (
             <PanGestureHandler onGestureEvent={onGestureEvent}>
                 <Animated.View style={[animateStyle]}>
-                    <Image source={image.url}></Image>
+                    <View style={styles.answerOptions}>
+                        <Image source={{uri:image.url}} style={styles.imgStyle}></Image>
+                    </View>
                 </Animated.View>
             </PanGestureHandler>
         )
@@ -152,24 +156,32 @@ const GuessImagePage = ({navigation, route}) => {
     return (
         <GestureHandlerRootView style={styles.rootView}>
         <View style={styles.container} ref={animatedRef}>
-            <View style={styles.answerOptions}>
-                {guessImages.map((image) => (
+            
+            {guessImages.map((image) => (
                 <GuessItem key={image.id} image={image} onMove={moveToTrash}></GuessItem>
             ))}
-        </View>
-            <Button
-            title='Submit'
-            onPress={checkAndSubmitAnswers}
-            />
+            
+            <View style={styles.test}>
+                <SimpleLineIcons name="trash" size={100} color="black" paddingRight={10}/>
+            
+                <TouchableOpacity style={styles.button} onPress={undoTrash}>
+                    <Text style={styles.undoText}>Undo</Text>
+                </TouchableOpacity>
 
-            { showScore &&
-            <>
-            <View>
-                <Text>Your score: {score}</Text>
+                <TouchableOpacity
+                style={styles.button}
+                onPress={checkAndSubmitAnswers}>
+                    <Text style={styles.undoText}>Submit</Text>
+                </TouchableOpacity>
+
+                { showScore &&
+                <>
+                <View>
+                    <Text>Your score: {score}</Text>
+                </View>
+                </>
+                }
             </View>
-            </>
-            }
-
           
         </View>
     </GestureHandlerRootView>
@@ -184,14 +196,39 @@ const styles  = StyleSheet.create({
     container:{
         flex: 1, 
         backgroundColor: '#fff',
-        alignItems: 'center',
         justifyContent: 'center',
-        flexWrap: 'wrap'
+        flexWrap: 'wrap',
     },
     rootView:{
         flex: 1
     },
     answerOptions:{
-        flexBasis: '33.333333%'
+        flexBasis: '29.4%',
+        top: -20,
+        flexGrow: 0, 
+        flexShrink: 0,                     
+        paddingRight: 10,
+        paddingLeft: 10,
+        paddingBottom: -10,
+        marginBottom: -20,
+        marginTop: -5
+    },
+    imgStyle:{
+        width: 90,
+        height: 90,
+        
+    },
+    test:{
+        position: 'absolute',
+        flexDirection: 'row',
+        bottom: 10,
+        padding: 10,
+    },
+    button:{
+        backgroundColor: 'grey',
+        padding: 20,
+        width: 90 ,
+        justifyContent: 'center',
+        marginRight: 20    
     }
 })

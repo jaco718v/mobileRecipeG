@@ -6,15 +6,18 @@ import { db } from '../components/config'
 import { StatusContext } from "../context/context"
 import { TouchableOpacity, View, Text, TextInput, StyleSheet } from 'react-native'
 import { getNextId } from '../util/util'
+import { useCollection } from 'react-firebase-hooks/firestore'
+
 
 const MapPage = ({navigation, route}) => {
+    const statusContext = useContext(StatusContext)
+    const [values, loading, error] = useCollection(collection(db, "locationMarkers"))
+    const markers = values?.docs.map((_doc) => ({..._doc.data(), id:_doc.id}))
     const [markerData, setMarkerData] = useState(null)
     const [showLocation, setShowLocation] = useState(false)
     const [showCreate, setShowCreate] = useState(false)
     const [locationName, setLocationName] = useState('Unnamed')
     const [locationDesc, setLocationDesc] = useState('desc')
-    const statusContext = useContext(StatusContext)
-    const [markers, setMarkers] = useState([])
     const [region, setRegion] = useState({
         latitude: 55,
         longitude: 12,
@@ -57,26 +60,6 @@ const MapPage = ({navigation, route}) => {
         }
     },[] )
 
-    useEffect( () => {
-        async function getLocationMarkers(){ //Might not need to be a function + Might be better with snapshot
-            await getDocs(collection(db, "locationMarkers"))
-            .then((n) => { 
-                const loadedCollections = []
-                n.forEach(doc => {
-                const collectionId = doc.id
-                const collectionData = doc.data()
-                loadedCollections.push({id: collectionId, ...collectionData})
-                setMarkers([...loadedCollections])
-                })
-                console.log("Data loaded")
-                })
-            .catch((error) => {
-                console.log(error)
-             });   
-        }
-        getLocationMarkers()  
-    },[])
-
 
     function addMarker(data){
         const {latitude, longitude} = data.nativeEvent.coordinate
@@ -103,7 +86,7 @@ const MapPage = ({navigation, route}) => {
             locationId: newId
         })
         statusContext.setAccountData({...statusContext.accountData, locationId:newId})
-        setMarkers([...markers, {...newMarker, id:newId}])
+        //setMarkers([...markers, {...newMarker, id:newId}])
         }
         catch(error){
             console.log("sad error : ", error)
@@ -130,7 +113,7 @@ const MapPage = ({navigation, route}) => {
                 addMarker(event)
             }}
             >
-                {markers.map(marker => (
+                {markers && markers.map(marker => (
                     <Marker
                     coordinate={marker.coordinate}
                     key={marker.key}
