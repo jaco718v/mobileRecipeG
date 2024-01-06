@@ -134,8 +134,8 @@ const MapPage = ({navigation, route}) => {
 
             { statusContext.accountData.type === true &&
             <>
-                <Text>Edit Recipes</Text>
-                <Text>Edit Location</Text>
+                <Text onPress={() => navigation.navigate('locationEditorPage')}>Create recipes</Text>
+                
             </>
             }
 

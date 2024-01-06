@@ -11,7 +11,7 @@ import { getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut } from
 
 const LoginPage = ({navigation, route}) => {
     let auth = getAuth()
-    const [enteredEmail, setEnteredEmail] = useState("testtest@gmail.com")
+    const [enteredEmail, setEnteredEmail] = useState("testttest@gmail.com")
     const [enteredPassword, setEnteredPassword] = useState("1234test")
     const [userId, setUserId] = useState(null)
     const statusContext = useContext(StatusContext)

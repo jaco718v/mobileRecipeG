@@ -28,7 +28,7 @@ export default function App() {
   return (
     <StatusContextProvider>
       <NavigationContainer>
-        <Stack.Navigator initialRouteName='locationEditorPage'>
+        <Stack.Navigator initialRouteName='loginPage'>
           <Stack.Screen
             name='loginPage'
             component={LoginPage}

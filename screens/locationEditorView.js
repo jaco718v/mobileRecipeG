@@ -1,29 +1,31 @@
 import { StyleSheet, Text, View, Button, TextInput, TouchableOpacity, Image } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { useState, useEffect, useContext } from 'react';
-import { db } from '../components/config';
+import { db, storage } from '../components/config';
 import { StatusContext } from "../context/context"
-import { getDoc, setDoc, doc } from 'firebase/firestore'
+import { setDoc, doc, collection } from 'firebase/firestore'
 import { RadioButton } from 'react-native-paper';
 import * as ImagePicker from "expo-image-picker"
 import { useCollection } from 'react-firebase-hooks/firestore'
 import { getNextId } from "../util/util";
+import { ref, uploadBytes } from "firebase/storage"
+
 
 const LocationEditorPage = ({navigation, route}) => {
-    const [textGuessValues, textGuessLoading, textGuessError] = useCollection(collection(db, "locationMarkers", String(statusContext.locationData.id), 'textGuess'))
-    const textGuessList = textGuessValues?.docs.map((_doc) => ({..._doc.data(), id:_doc.id}))
-    const [imageGuessValues, imageGuessLoading, imageGuessError] = useCollection(collection(db, "locationMarkers", String(statusContext.locationData.id), 'imageGuess'))
-    const imageGuessList = imageGuessValues?.docs.map((_doc) => ({..._doc.data(), id:_doc.id}))
     const statusContext = useContext(StatusContext)
+    const [textGuessValues, textGuessLoading, textGuessError] = useCollection(collection(db, "locationMarkers", String(statusContext.accountData.locationId), 'textGuess'))
+    const textGuessList = textGuessValues?.docs.map((_doc) => ({..._doc.data(), id:_doc.id}))
+    const [imageGuessValues, imageGuessLoading, imageGuessError] = useCollection(collection(db, "locationMarkers", String(statusContext.accountData.locationId), 'imageGuess'))
+    const imageGuessList = imageGuessValues?.docs.map((_doc) => ({..._doc.data(), id:_doc.id}))
     const [createType, setCreateType] = useState(true)
     const [enteredRecipeName, setEnteredRecipeName] = useState('Unnamed')
     const [ingredientList, setIngredientList] = useState([{name:"", id:0}])
     const [imageList, setImageList] = useState([])
-    const [nextId, setNextId] = useState([])
+    const [nextId, setNextId] = useState(0)
 
 
     useEffect (() => {
-        if(textGuessError && imageGuessList){
+        if(textGuessList && imageGuessList){
             setNextId(getNextId([...textGuessList, ...imageGuessList]))
         }
     },[textGuessValues, imageGuessValues])
@@ -42,30 +44,40 @@ const LocationEditorPage = ({navigation, route}) => {
     }
 
     async function submitTextRecipe(){
-        const ingredientNameList = textGuessList.map((n) => n.name)
-        const scoreRef = doc(db, "locationMarkers", String(statusContext.locationData.id), 'textGuess', String(nextId))
-            await setDoc(scoreRef,{
-                ingredients: ingredientNameList,
-                name: enteredRecipeName   
-            })
+        if(ingredientList.length > 1 && ingredientList.length < 10){
+            const ingredientNameList = ingredientList.map((n) => n.name)
+            const scoreRef = doc(db, "locationMarkers", String(statusContext.accountData.locationId), 'textGuess', String(nextId))
+                await setDoc(scoreRef,{
+                    ingredients: ingredientNameList,
+                    name: enteredRecipeName   
+                })
+            navigation.navigate('mapPage')
+        } else{
+            console.log("Size cannot exceed 9 or be less than 2")
+        }
     }
 
 
     async function submitImageRecipe(){
+        if(imageList.length > 1 && imageList.length < 7){
         uploadImages()
-        const scoreRef = doc(db, "locationMarkers", String(statusContext.locationData.id), 'imageGuess', String(nextId))
+        const scoreRef = doc(db, "locationMarkers", String(statusContext.accountData.locationId), 'imageGuess', String(nextId))
             await setDoc(scoreRef,{
                 numberOfImages: imageList.length,
                 name: enteredRecipeName     
             })
+        navigation.navigate('mapPage')
+        } else{
+            console.log("Size cannot exceed 6 or be less than 2")
+        }
     }
 
     async function uploadImages(){
         let counter = 0
         for (let image of imageList){
-            const res = await fetch(image)
+            const res = await fetch(image.uri)
             const blob = await res.blob()
-            const locationId = statusContext.locationData.id
+            const locationId = statusContext.accountData.locationId
             const storageRef = ref(storage,`ingredient-${locationId}-${nextId}-${counter++}.jpg`)
             uploadBytes(storageRef, blob).then((snapshot) => {
                 console.log("image uploaded")
@@ -125,14 +137,16 @@ const LocationEditorPage = ({navigation, route}) => {
 
             { createType &&
             <>
-                {ingredientList.map(ingredient => (
-                    <View>
+                {ingredientList.map((ingredient, i) => (
+                    <View
+                    key={ingredient.id}
+                    >
                         <TextInput
-                            key={ingredient.id}
+                            
                             onChangeText={newText => setIngredientList(ingredientList.map((n) => n.id === ingredient.id ? {...n, name:newText} : n))}
                             value={ingredient.name}
                         />
-                        <Text key={`X${ingredient.id}`} onPress={() => removeIngredient(ingredient.id)}>X</Text>
+                        <Text onPress={() => removeIngredient(ingredient.id)}>X</Text>
                     </View>
                 ))}
 
@@ -156,12 +170,13 @@ const LocationEditorPage = ({navigation, route}) => {
                 <Text>Tab image to delete</Text>
 
                 {imageList.map(image => (
-                    <View>
+                    <View
+                    key={image.id}
+                    >
                         <TouchableOpacity 
-                        key={`TO${image.id}`}
                         onPress={() => removeImage(image.id)}
                         >
-                            <Image key={image.id} source={{uri:image.uri}} style={styles.imgStyle}></Image>
+                            <Image  source={{uri:image.uri}} style={styles.imgStyle}></Image>
                         </TouchableOpacity>
                     </View>
                 ))}
