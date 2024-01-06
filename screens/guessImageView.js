@@ -58,8 +58,9 @@ const GuessImagePage = ({navigation, route}) => {
     }
     
     function moveToTrash(image){
+        if(image.visible){
             setTrash([...trash, {...image}])
-            setGuessImages(guessImages.map((n) => n.id === image.id ? {...n, visible:false} : n)) 
+            setGuessImages(guessImages.map((n) => n.id === image.id ? {...n, visible:false} : n)) }
     }
 
     function undoTrash(){
@@ -92,14 +93,14 @@ const GuessImagePage = ({navigation, route}) => {
         setScore(score)
 
         setTimeout(async () => {
-
-            const scoreRef = doc(db, "users", statusContext.currentUser.uid, "history", String(locationId), "scores", String(recipeData.id))
-            await setDoc(scoreRef,{
-                score: score,
-                hasImage:false
-            })
+            if(statusContext.accountData.type !== null){
+                const scoreRef = doc(db, "users", statusContext.currentUser.uid, "history", String(statusContext.locationData.id), "scores", String(recipeData.id))
+                await setDoc(scoreRef,{
+                    score: score,
+                    hasImage:false
+                })
+            }
             navigation.navigate("guessListPage")
-
         }, 2000)
 
 

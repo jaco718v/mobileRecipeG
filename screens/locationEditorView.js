@@ -1,0 +1,193 @@
+import { StyleSheet, Text, View, Button, TextInput, TouchableOpacity, Image } from 'react-native';
+import { StatusBar } from 'expo-status-bar';
+import { useState, useEffect, useContext } from 'react';
+import { db } from '../components/config';
+import { StatusContext } from "../context/context"
+import { getDoc, setDoc, doc } from 'firebase/firestore'
+import { RadioButton } from 'react-native-paper';
+import * as ImagePicker from "expo-image-picker"
+import { useCollection } from 'react-firebase-hooks/firestore'
+import { getNextId } from "../util/util";
+
+const LocationEditorPage = ({navigation, route}) => {
+    const [textGuessValues, textGuessLoading, textGuessError] = useCollection(collection(db, "locationMarkers", String(statusContext.locationData.id), 'textGuess'))
+    const textGuessList = textGuessValues?.docs.map((_doc) => ({..._doc.data(), id:_doc.id}))
+    const [imageGuessValues, imageGuessLoading, imageGuessError] = useCollection(collection(db, "locationMarkers", String(statusContext.locationData.id), 'imageGuess'))
+    const imageGuessList = imageGuessValues?.docs.map((_doc) => ({..._doc.data(), id:_doc.id}))
+    const statusContext = useContext(StatusContext)
+    const [createType, setCreateType] = useState(true)
+    const [enteredRecipeName, setEnteredRecipeName] = useState('Unnamed')
+    const [ingredientList, setIngredientList] = useState([{name:"", id:0}])
+    const [imageList, setImageList] = useState([])
+    const [nextId, setNextId] = useState([])
+
+
+    useEffect (() => {
+        if(textGuessError && imageGuessList){
+            setNextId(getNextId([...textGuessList, ...imageGuessList]))
+        }
+    },[textGuessValues, imageGuessValues])
+
+
+    function addIngredientField(){
+        setIngredientList([...ingredientList, {name:"", id:ingredientList.length}])
+    }
+
+    function removeImage(id){
+        setImageList([imageList.sort((n) => n.id != id)])
+    }
+
+    function removeIngredient(id){
+        setIngredientList([ingredientList.sort((n) => n.id != id)])
+    }
+
+    async function submitTextRecipe(){
+        const ingredientNameList = textGuessList.map((n) => n.name)
+        const scoreRef = doc(db, "locationMarkers", String(statusContext.locationData.id), 'textGuess', String(nextId))
+            await setDoc(scoreRef,{
+                ingredients: ingredientNameList,
+                name: enteredRecipeName   
+            })
+    }
+
+
+    async function submitImageRecipe(){
+        uploadImages()
+        const scoreRef = doc(db, "locationMarkers", String(statusContext.locationData.id), 'imageGuess', String(nextId))
+            await setDoc(scoreRef,{
+                numberOfImages: imageList.length,
+                name: enteredRecipeName     
+            })
+    }
+
+    async function uploadImages(){
+        let counter = 0
+        for (let image of imageList){
+            const res = await fetch(image)
+            const blob = await res.blob()
+            const locationId = statusContext.locationData.id
+            const storageRef = ref(storage,`ingredient-${locationId}-${nextId}-${counter++}.jpg`)
+            uploadBytes(storageRef, blob).then((snapshot) => {
+                console.log("image uploaded")
+            })
+        }
+      }
+
+
+    async function useCamera(){
+        const result = await ImagePicker.requestCameraPermissionsAsync()
+        if(result.granted === false){
+            alert('No camera access')
+        }
+        ImagePicker.launchCameraAsync()
+        .then(response => {
+            if(!response.canceled){
+                setImageList([...imageList, {uri: response.assets[0].uri, id: imageList.length}])
+            }
+        })
+        .catch(error => alert('Camera error: '+ error))
+    }
+
+    async function launchImagePicker(){
+        let result = await ImagePicker.launchImageLibraryAsync({
+          allowsEditing: true
+        })
+        if(!result.canceled){
+          setImageList([...imageList, {uri: result.assets[0].uri, id: imageList.length}])
+        }
+      }
+
+
+    return(
+        <View style={styles.container}>
+            <Text>Create a new recipe quiz</Text>
+
+            <Button
+            title='List me'
+            onPress={() => console.log(imageList)}
+            />
+
+            <RadioButton
+              value="Text-based Quiz"
+              status={ createType ? 'checked' : 'unchecked' }
+              onPress={() => setCreateType(true)}
+            />
+            <RadioButton
+              value="Image-based Quiz"
+              status={ createType ? 'unchecked' : 'checked' }
+              onPress={() => setCreateType(false)}
+            />
+
+            <TextInput
+                onChangeText={newText => setEnteredRecipeName(newText)}
+                value={enteredRecipeName}
+            />
+
+            { createType &&
+            <>
+                {ingredientList.map(ingredient => (
+                    <View>
+                        <TextInput
+                            key={ingredient.id}
+                            onChangeText={newText => setIngredientList(ingredientList.map((n) => n.id === ingredient.id ? {...n, name:newText} : n))}
+                            value={ingredient.name}
+                        />
+                        <Text key={`X${ingredient.id}`} onPress={() => removeIngredient(ingredient.id)}>X</Text>
+                    </View>
+                ))}
+
+                <TouchableOpacity onPress={addIngredientField}>
+                    <Text>Add ingredient</Text>
+                </TouchableOpacity>
+
+            </>
+            }
+
+            { !createType &&
+            <>
+                <TouchableOpacity onPress={useCamera}>
+                    <Text>Use Camera</Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity onPress={launchImagePicker}>
+                    <Text>Select File</Text>
+                </TouchableOpacity>
+
+                <Text>Tab image to delete</Text>
+
+                {imageList.map(image => (
+                    <View>
+                        <TouchableOpacity 
+                        key={`TO${image.id}`}
+                        onPress={() => removeImage(image.id)}
+                        >
+                            <Image key={image.id} source={{uri:image.uri}} style={styles.imgStyle}></Image>
+                        </TouchableOpacity>
+                    </View>
+                ))}
+            </>
+            }
+
+                <TouchableOpacity onPress={createType? submitTextRecipe : submitImageRecipe}>
+                    <Text>Finish recipe quiz</Text>
+                </TouchableOpacity>
+
+        </View>
+    )
+}
+
+export default LocationEditorPage
+
+const styles = StyleSheet.create({
+    container: {
+      height: '100%',
+      width: '100%',
+      backgroundColor: '#fff',
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    imgStyle:{
+        height:60,
+        width: 60
+    }
+})

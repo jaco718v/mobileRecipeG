@@ -1,7 +1,7 @@
 import { StatusBar } from 'expo-status-bar';
-import { StyleSheet, Text, View, Button, TextInput, Platform, TouchableOpacity } from 'react-native';
+import { StyleSheet, Text, View, Button, TextInput, TouchableOpacity } from 'react-native';
 import { useState, useEffect, useContext } from 'react';
-import { app, db } from '../components/config';
+import { db } from '../components/config';
 import { StatusContext } from "../context/context"
 import { getDoc, doc } from 'firebase/firestore';
 import { getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut } from 'firebase/auth'
@@ -25,6 +25,7 @@ const LoginPage = ({navigation, route}) => {
             getAccountData(currentUser)
         }else{
             statusContext.setCurrentUser(null)
+            statusContext.setAccountData(null)
             setUserId(null)
         }
         })
@@ -58,7 +59,7 @@ const LoginPage = ({navigation, route}) => {
                 activeOpacity={1}
                 style={styles.container}
                 onPress={() => {
-                    if(statusContext.currentUser !== null && statusContext.accountData.type){
+                    if(statusContext.currentUser !== null && statusContext.accountData != null && statusContext.accountData.type !== null){
                         navigation.navigate("mapPage")
                     }
                 }}
@@ -96,7 +97,8 @@ const LoginPage = ({navigation, route}) => {
 
         <Text
             onPress={() => {
-            statusContext.setAccountData({type: null})    
+            statusContext.setAccountData({type: null})
+            statusContext.setCurrentUser({uid:"none"})    
             navigation.navigate("mapPage")}
         }
         >Play without an Account</Text>

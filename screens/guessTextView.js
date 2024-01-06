@@ -73,12 +73,13 @@ const GuessTextPage = ({navigation, route}) => {
         setScore(score)
 
         setTimeout(async () => {
-
-            const scoreRef = doc(db, "users", statusContext.currentUser.uid, "history", String(statusContext.locationData.id), "scores", String(recipeData.id))
-            await setDoc(scoreRef,{
-                score: score,
-                hasImage:false
-            })
+            if(!statusContext.accountData.type === null){
+                const scoreRef = doc(db, "users", statusContext.currentUser.uid, "history", String(statusContext.locationData.id), "scores", String(recipeData.id))
+                await setDoc(scoreRef,{
+                    score: score,
+                    hasImage:false
+                })
+            }
             navigation.navigate("guessListPage")
 
         }, 2000)

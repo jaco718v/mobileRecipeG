@@ -11,6 +11,7 @@ import MapPage from './screens/mapView';
 import GuessListPage from './screens/guessListView';
 import GuessTextPage from './screens/guessTextView';
 import GuessImagePage from './screens/guessImageView';
+import LocationEditorPage from './screens/locationEditorView';
 
 export default function App() {
   const Stack = createNativeStackNavigator();
@@ -27,7 +28,7 @@ export default function App() {
   return (
     <StatusContextProvider>
       <NavigationContainer>
-        <Stack.Navigator initialRouteName='loginPage'>
+        <Stack.Navigator initialRouteName='locationEditorPage'>
           <Stack.Screen
             name='loginPage'
             component={LoginPage}
@@ -51,6 +52,10 @@ export default function App() {
           <Stack.Screen
             name='guessImagePage'
             component={GuessImagePage}
+          />
+          <Stack.Screen
+            name='locationEditorPage'
+            component={LocationEditorPage}
           />
         </Stack.Navigator>
       </NavigationContainer>

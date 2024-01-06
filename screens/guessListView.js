@@ -1,4 +1,4 @@
-import { TouchableOpacity, View, Text, TextInput, StyleSheet, Image, FlatList } from 'react-native'
+import { TouchableOpacity, View, Text, StyleSheet, Image, FlatList } from 'react-native'
 import { doc, updateDoc, getDocs, collection } from 'firebase/firestore'
 import { db, storage } from '../components/config'
 import * as ImagePicker from "expo-image-picker"
@@ -24,9 +24,14 @@ const GuessListPage = ({navigation, route}) => {
     const list = difficulty? scoredTextList : scoredImageList
 
     useEffect( () => {
-        if(scoreList && textGuessList && imageGuessList){
-            setScoredTextList(([...textGuessList]).map((n) => matchRecipeScore(scoreList, n)))
-            setScoredImageList(([...imageGuessList]).map((n) => matchRecipeScore(scoreList, n)))
+        if(textGuessList && imageGuessList){
+            if(scoreList){
+                setScoredTextList(([...textGuessList]).map((n) => matchRecipeScore(scoreList, n)))
+                setScoredImageList(([...imageGuessList]).map((n) => matchRecipeScore(scoreList, n)))
+            } else {
+                setScoredTextList(([...textGuessList]).map((n) => matchRecipeScore([], n)))
+                setScoredImageList(([...imageGuessList]).map((n) => matchRecipeScore([], n)))
+            }
         }
       },[scoreValues, textGuessValues, imageGuessValues])
   
@@ -49,15 +54,14 @@ const GuessListPage = ({navigation, route}) => {
         ImagePicker.launchCameraAsync()
         .then(response => {
             if(!response.canceled){
-                setImagePath(response.assets[0].uri)
-                uploadImage(recipe)
+                uploadImage(response.assets[0].uri, recipe)
             }
         })
         .catch(error => alert('Camera error: '+ error))
     }
 
-    async function uploadImage(recipe){ //Maybe make useEffect
-        const res = await fetch(imagePath)
+    async function uploadImage(image, recipe){
+        const res = await fetch(image)
         const blob = await res.blob()
         const userId = statusContext.currentUser.uid
         const locationId = statusContext.locationData.id
@@ -78,7 +82,7 @@ const GuessListPage = ({navigation, route}) => {
       }
 
     async function downloadAndDisplayImage(recipeId){
-        const userId = statusContext.currentUser
+        const userId = statusContext.currentUser.uid
         const locationId = statusContext.locationData.id
         getDownloadURL(ref(storage, `meal-${userId}-${locationId}-${recipeId}.jpg`))
         .then((url) => {
@@ -90,7 +94,7 @@ const GuessListPage = ({navigation, route}) => {
       }
 
     return(
-        <View>
+        <View style={styles.container}>
 
             <TouchableOpacity onPress={() => setDifficulty(false)} >
                 <Text>Text</Text>
@@ -100,18 +104,6 @@ const GuessListPage = ({navigation, route}) => {
                 <Text>Image</Text>
             </TouchableOpacity>
 
-
-            {   showImage &&
-            <>
-
-                <View>
-                    <TouchableOpacity style={styles.imageContainer} onPress={setShowImage(false)}> 
-                        <Image source={{uri:imagePath}}/> 
-                    </TouchableOpacity>
-                </View>
-
-            </>
-            }
 
             <FlatList
                 data={list}
@@ -129,8 +121,8 @@ const GuessListPage = ({navigation, route}) => {
 
                         <Text>{recipe.item.score}</Text>
                         
-                        <AntDesign name={recipe.item.imageId? "camera" : 'camerao'} 
-                        onPress={recipe.item.imageId? () => downloadAndDisplayImage(recipe.item.id) : () => useCamera(recipe.item)}
+                        <AntDesign name={recipe.item.hasImage? "camera" : 'camerao'} 
+                        onPress={recipe.item.hasImage? () => downloadAndDisplayImage(recipe.item.id) : () => useCamera(recipe.item)}
                         size={12}/>
                     </>
                     }
@@ -142,8 +134,20 @@ const GuessListPage = ({navigation, route}) => {
                 </View>  
                         
                     
-                    }
+                }
             />
+
+            {showImage &&
+            <> 
+                <View style={styles.imageContainer}>
+                    <TouchableOpacity  onPress={() =>setShowImage(false)}> 
+                        <Image source={{uri:imagePath}} style={styles.imageStyle}/> 
+                    </TouchableOpacity>
+                </View>
+
+            </>
+            }
+
 
         </View>
     )
@@ -152,10 +156,23 @@ const GuessListPage = ({navigation, route}) => {
 export default GuessListPage
 
 const styles = StyleSheet.create({
-    imageContainer: {
-        position: 'absolute', // Stuff
+    container: {
+        height: '100%',
         width: '100%',
-        height: '100%'
+        backgroundColor: '#fff',
+        padding: 20,
+        justifyContent: 'center',
+      },
+    imageContainer: {
+        position: 'absolute', 
+        width: '100%',
+        height: '100%',
+        padding: 40,
+        justifyContent: 'center'
+    },
+    imageStyle:{
+        height: 250,
+        width: 250,
     }
 
 })
