@@ -1,4 +1,4 @@
-import { Button, StyleSheet, Text, View } from 'react-native'
+import { Button, StyleSheet, Text, View, TouchableOpacity } from 'react-native'
 import { useEffect, useState,useContext } from 'react'
 import {StatusContext} from '../context/context'
 import { db } from '../components/config'
@@ -17,7 +17,7 @@ const GuessTextPage = ({navigation, route}) => {
 
     useEffect (() => {
         const dummyRef = doc(db,"dummyAnswers", "text", )
-        async function getDocument(docRef, setFunction){ 
+        async function getDocument(docRef){ 
             docSnap = await getDoc(docRef)
                 const data = docSnap.data()
                 createGuessOptions(data.dummies, recipeData.ingredients)
@@ -44,7 +44,7 @@ const GuessTextPage = ({navigation, route}) => {
     }
 
     function moveAnswer(coordinates, id){
-        if(coordinates.y > 400){   
+        if(coordinates.y > 380){   
             if(answers.find((n) => n.id === id) === undefined){
                 answers = [...answers, guessOptions.find((n) => n.id === id)]
 
@@ -72,8 +72,11 @@ const GuessTextPage = ({navigation, route}) => {
         setShowScore(true)
         setScore(score)
 
+
+        console.log(statusContext.accountData.type)
         setTimeout(async () => {
-            if(!statusContext.accountData.type === null){
+            if(statusContext.accountData.type !== null){
+                console.log('oi')
                 const scoreRef = doc(db, "users", statusContext.currentUser.uid, "history", String(statusContext.locationData.id), "scores", String(recipeData.id))
                 await setDoc(scoreRef,{
                     score: score,
@@ -126,7 +129,7 @@ const GuessTextPage = ({navigation, route}) => {
         return (
             <PanGestureHandler onGestureEvent={onGestureEvent}>
                 <Animated.View style={[animateStyle]}>
-                    <Text> {guessOption.name} </Text>
+                    <Text style={styles.answerText}> {guessOption.name} </Text>
                 </Animated.View>
             </PanGestureHandler>
         )
@@ -139,15 +142,22 @@ const GuessTextPage = ({navigation, route}) => {
     return (
         <GestureHandlerRootView style={styles.rootView}>
             <View style={styles.container} ref={animatedRef}>
+
                 <View style={styles.answerOptions}>
+
+                <Text style = {styles.titleText}> Drag items from a {recipeData.name} to green</Text>
+
             {guessOptions.map((option) => (
                     <GuessItem key={option.id} guessOption={option} onMove={moveAnswer}></GuessItem>
                 ))}
             </View>
-                <Button
-                title='Submit'
-                onPress={checkAndSubmitAnswers}
-                />
+
+            <View style={{flex:1}}>
+            <TouchableOpacity
+                style={styles.button}
+                onPress={checkAndSubmitAnswers}>
+                    <Text style={{fontWeight: 'bold', fontSize: 18}}>Finish</Text>
+                </TouchableOpacity>
 
                 { showScore &&
                 <>
@@ -156,7 +166,7 @@ const GuessTextPage = ({navigation, route}) => {
                 </View>
                 </>
                 }
-
+            </View>
               
             </View>
         </GestureHandlerRootView>
@@ -169,21 +179,18 @@ const GuessTextPage = ({navigation, route}) => {
 export default GuessTextPage
 
 const styles  = StyleSheet.create({
-    imgStyle:{
-        width: 100,
-        height: 100
-    },
     container:{
         flex: 1,
-        backgroundColor: '#fff',
-        alignItems: 'center',
+        backgroundColor: "#75A778",
         justifyContent: 'center'
     },
     answerOptions:{
+        flex: 1,
+        flexWrap: 'wrap',
         flexDirection: 'row', 
-        backgroundColor: '#fff',
-        alignItems: 'center',
-        justifyContent: 'center'
+        padding: 25 ,
+        backgroundColor: '#DE7775',
+        
     },
     rootView:{
         flex: 1
@@ -195,5 +202,36 @@ const styles  = StyleSheet.create({
         justifyContent: 'center',
         width:'100%',
         height: '100%'
+    },
+    answerText:{
+        backgroundColor: 'transparent',
+        fontSize: 16,
+        fontWeight: 'bold'
+    },
+    titleText:{
+        
+        paddingBottom: 30,
+        fontSize:16,
+        width: '100%',
+        textDecorationLine: "underline",
+        textDecorationStyle: "solid"
+    },
+    button:{
+        position: 'absolute',
+        alignItems: 'center',
+        backgroundColor: '#2293bb',
+        padding: 5,
+        height:45,
+        width: 339,
+        bottom:0,
+        textAlign: 'center',
+        borderTopColor: "black",
+        borderTopWidth: 2,
+        borderRightColor: "black",
+        borderRightWidth: 1,
+        borderLeftColor: "black",
+        borderLeftWidth: 1,
+        borderTopLeftRadius: 25,
+        borderTopRightRadius: 25,
     }
 })

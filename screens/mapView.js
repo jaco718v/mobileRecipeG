@@ -270,9 +270,6 @@ const styles = StyleSheet.create({
       flexDirection: 'row',
       borderTopLeftRadius: 10 
     },
-    input:{
-
-    },
     optionText:{
         margin: 3,
         paddingLeft:10,

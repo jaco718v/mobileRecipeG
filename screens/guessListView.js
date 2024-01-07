@@ -81,7 +81,7 @@ const GuessListPage = ({navigation, route}) => {
         })
         const userRef = doc(db, "users", statusContext.currentUser.uid)
         await updateDoc(userRef,{
-            totalScore: statusContext.accountData.totalScore + score,
+            totalScore: statusContext.accountData.totalScore + recipe.score,
         }).catch((error) => {
             console.log(error)
         })
@@ -101,55 +101,56 @@ const GuessListPage = ({navigation, route}) => {
 
     return(
         <View style={styles.container}>
+            <View style={showImage? styles.fadedContainer : null}>
+                <View style={styles.buttonRow}>
+                <TouchableOpacity style={styles.button} onPress={() => setDifficulty(true)} >
+                    <Text>Text</Text>
+                </TouchableOpacity>
 
-            <TouchableOpacity onPress={() => setDifficulty(false)} >
-                <Text>Text</Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity onPress={() => setDifficulty(true)} >
-                <Text>Image</Text>
-            </TouchableOpacity>
-
+                <TouchableOpacity style={styles.button} onPress={() => setDifficulty(false)} >
+                    <Text>Image</Text>
+                </TouchableOpacity>
+            </View>
 
             <FlatList
                 data={list}
                 renderItem={(recipe) => 
-                <View>
+                <View style={styles.listRow}>
                     <Text style={styles.listItem} onPress={()=>{
                         if(!recipe.item.score)
                             difficulty? navigation.navigate("guessTextPage", {guessContent: recipe.item}) : navigation.navigate("guessImagePage", {guessContent: recipe.item}) }}>
                         {recipe.item.name} 
                     </Text>
 
-                    
-                    { recipe.item.taken &&
-                    <>
-
-                        <Text>{recipe.item.score}</Text>
+                    <View style={{flexDirection: 'row'}}>
+                        { recipe.item.taken &&
+                        <>              
+                            <AntDesign name={recipe.item.hasImage? "camera" : 'camerao'} 
+                            onPress={recipe.item.hasImage? () => downloadAndDisplayImage(recipe.item.id) : () => useCamera(recipe.item)}
+                            size={16}/>
+                        </>
+                        }
                         
-                        <AntDesign name={recipe.item.hasImage? "camera" : 'camerao'} 
-                        onPress={recipe.item.hasImage? () => downloadAndDisplayImage(recipe.item.id) : () => useCamera(recipe.item)}
-                        size={12}/>
-                    </>
-                    }
-                    
-                    
-                    <MaterialIcons name={ recipe.item.score >= 50 ? "star" : "star-border"} size={12}/>
-                    <MaterialIcons name={ recipe.item.score >= 80 ? "star" : "star-border"} size={12}/>
-                    <MaterialIcons name={ recipe.item.score >= 110 ? "star" : "star-border"} size={12}/>
+                        
+                        <MaterialIcons name={ recipe.item.score >= 50 ? "star" : "star-border"} size={16}/>
+                        <MaterialIcons name={ recipe.item.score >= 80 ? "star" : "star-border"} size={16}/>
+                        <MaterialIcons name={ recipe.item.score >= 110 ? "star" : "star-border"} size={16}/>
+                    </View>
                 </View>  
                         
                     
                 }
             />
-
+            </View>
             {showImage &&
             <> 
                 <View style={styles.imageContainer}>
-                    <TouchableOpacity  onPress={() =>setShowImage(false)}> 
+                    <TouchableOpacity style={styles.imageBox} onPress={() =>setShowImage(false)}> 
                         <Image source={{uri:imagePath}} style={styles.imageStyle}/> 
                     </TouchableOpacity>
                 </View>
+
+
 
             </>
             }
@@ -163,22 +164,63 @@ export default GuessListPage
 
 const styles = StyleSheet.create({
     container: {
+        flex: 1,
         height: '100%',
         width: '100%',
-        backgroundColor: '#fff',
-        padding: 20,
-        justifyContent: 'center',
+        backgroundColor: "#a1e0e9",
+        // justifyContent: 'center',
       },
     imageContainer: {
         position: 'absolute', 
         width: '100%',
         height: '100%',
         padding: 40,
-        justifyContent: 'center'
+        justifyContent: 'center',
+        opacity: 1
     },
     imageStyle:{
         height: 250,
         width: 250,
+        borderRadius: 10,
+        borderWidth: 2,
+        borderColor: "black",
+    }, 
+    button:{
+        backgroundColor: '#a9c1c8',
+        padding: 5,
+        height:45,
+        width: 170,
+        textAlign: 'center',
+        borderTopColor: "black",
+        borderTopWidth: 1,
+        borderRightColor: "black",
+        borderRightWidth: 1,
+        borderBottomColor: 'black',
+        borderBottomWidth: 1,
+    },
+    buttonRow:{
+      flexDirection: 'row',
+      borderTopLeftRadius: 10 
+    },
+    listRow:{
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        borderBottomWidth: 1,
+        borderBottomColor: 'black',
+        height: 35,
+        padding: 5
+    },
+    imageBox:{
+        height: '100%',
+        width: '100%',
+    },
+    fadedContainer:{
+        flex: 1,
+        height: '100%',
+        width: '100%',
+        backgroundColor: '#fff',
+        justifyContent: 'center',
+        opacity: 0.2  
     }
 
 })

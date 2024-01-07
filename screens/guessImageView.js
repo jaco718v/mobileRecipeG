@@ -1,15 +1,15 @@
 import { StyleSheet, Text, View, Image, TouchableOpacity, Button } from 'react-native'
 import { useState, useEffect, useContext } from 'react'
-import { storage } from '../components/config'
+import { storage, db } from '../components/config'
 import { doc, setDoc, updateDoc } from 'firebase/firestore'
 import { StatusContext } from "../context/context"
 import { ref, getDownloadURL} from "firebase/storage"
 import { PanGestureHandler, GestureHandlerRootView } from 'react-native-gesture-handler'
 import Animated, { useSharedValue, useAnimatedGestureHandler, useAnimatedStyle, withSpring, getRelativeCoords, useAnimatedRef, runOnJS } from 'react-native-reanimated'
-import { SimpleLineIcons } from '@expo/vector-icons'
+import { SimpleLineIcons, FontAwesome, Ionicons } from '@expo/vector-icons'
 
 const GuessImagePage = ({navigation, route}) => {
-    const guessOptions = route.params?.guessOptions
+    const guessOptions = route.params?.guessContent
     const statusContext = useContext(StatusContext)
     const [guessImages, setGuessImages] = useState([])
     const animatedRef = useAnimatedRef() 
@@ -94,7 +94,7 @@ const GuessImagePage = ({navigation, route}) => {
 
         setTimeout(async () => {
             if(statusContext.accountData.type !== null){
-                const scoreRef = doc(db, "users", statusContext.currentUser.uid, "history", String(statusContext.locationData.id), "scores", String(recipeData.id))
+                const scoreRef = doc(db, "users", statusContext.currentUser.uid, "history", String(statusContext.locationData.id), "scores", String(guessOptions.id))
                 await setDoc(scoreRef,{
                     score: score,
                     hasImage:false
@@ -165,21 +165,23 @@ const GuessImagePage = ({navigation, route}) => {
         <GestureHandlerRootView style={styles.rootView}>
         <View style={styles.container} ref={animatedRef}>
             
+            <Text style = {styles.titleText}> Drag items not in a {guessOptions.name} to trash</Text>
+
             {guessImages.map((image) => (
                 <GuessItem key={image.id} image={image} onMove={moveToTrash}></GuessItem>
             ))}
             
-            <View style={styles.test}>
-                <SimpleLineIcons name="trash" size={100} color="black" paddingRight={10}/>
+            <View style={styles.buttonRow}>
+                <SimpleLineIcons name="trash" size={100} color="black" paddingRight={5}/>
             
                 <TouchableOpacity style={styles.button} onPress={undoTrash}>
-                    <Text style={styles.undoText}>Undo</Text>
+                    <FontAwesome name="undo" size={60} color="black" />
                 </TouchableOpacity>
 
                 <TouchableOpacity
                 style={styles.button}
                 onPress={checkAndSubmitAnswers}>
-                    <Text style={styles.undoText}>Submit</Text>
+                    <Ionicons name="checkmark" size={50} color="black" />
                 </TouchableOpacity>
 
                 { showScore &&
@@ -203,9 +205,19 @@ export default GuessImagePage
 const styles  = StyleSheet.create({
     container:{
         flex: 1, 
-        backgroundColor: '#fff',
+        backgroundColor: "#a1e0e9",
         justifyContent: 'center',
         flexWrap: 'wrap',
+    },
+    titleText:{
+        position: 'absolute',
+        width: '100%',
+        top:10,
+        textAlign: 'center',
+        fontSize: 13,
+        fontWeight: 'bold',
+        textDecorationLine: "underline",
+        textDecorationStyle: "solid"
     },
     rootView:{
         flex: 1
@@ -235,20 +247,26 @@ const styles  = StyleSheet.create({
     },
     imgStyle:{
         width: 90,
-        height: 90,    
+        height: 90, 
+        borderRadius: 10,
+        borderWidth: 2,
+        borderColor: "black",   
     },
-    test:{
+    buttonRow:{
         position: 'absolute',
         flexDirection: 'row',
         bottom: 10,
         padding: 10,
     },
     button:{
-        backgroundColor: 'grey',
+        backgroundColor: '#2293bb',
         padding: 20,
-        width: 90 ,
+        width: 95 ,
         justifyContent: 'center',
-        marginRight: 20    
+        marginRight: 20,
+        borderRadius: 8,
+        borderColor: "black",
+        borderWidth: 2,   
     },
     scoreBox:{
         position:'absolute', 

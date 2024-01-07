@@ -61,7 +61,7 @@ const LocationEditorPage = ({navigation, route}) => {
 
 
     async function submitImageRecipe(){
-        if(imageList.length > 1 && imageList.length < 7){
+        if(imageList.length > 2 && imageList.length < 7){
         uploadImages()
         const scoreRef = doc(db, "locationMarkers", String(statusContext.accountData.locationId), 'imageGuess', String(nextId))
             await setDoc(scoreRef,{
@@ -70,7 +70,7 @@ const LocationEditorPage = ({navigation, route}) => {
             })
         navigation.navigate('mapPage')
         } else{
-            console.log("Size cannot exceed 6 or be less than 2")
+            console.log("Size cannot exceed 6 or be less than 3")
         }
     }
 
