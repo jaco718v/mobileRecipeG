@@ -79,6 +79,12 @@ const GuessListPage = ({navigation, route}) => {
          }).catch((error) => {
           console.log(error)
         })
+        const userRef = doc(db, "users", statusContext.currentUser.uid)
+        await updateDoc(userRef,{
+            totalScore: statusContext.accountData.totalScore + score,
+        }).catch((error) => {
+            console.log(error)
+        })
       }
 
     async function downloadAndDisplayImage(recipeId){

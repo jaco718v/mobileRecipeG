@@ -3,18 +3,21 @@ import { StyleSheet, Text, View, Button, TextInput, TouchableOpacity } from 'rea
 import { useState, useEffect, useContext } from 'react';
 import { db } from '../components/config';
 import { StatusContext } from "../context/context"
-import { getDoc, doc } from 'firebase/firestore';
-import { getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut } from 'firebase/auth'
-
+import { getDoc, doc, setDoc } from 'firebase/firestore';
+import { getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut, createUserWithEmailAndPassword } from 'firebase/auth'
+import { RadioButton } from 'react-native-paper';
 
 
 
 const LoginPage = ({navigation, route}) => {
     let auth = getAuth()
+    const statusContext = useContext(StatusContext)
     const [enteredEmail, setEnteredEmail] = useState("testttest@gmail.com")
     const [enteredPassword, setEnteredPassword] = useState("1234test")
     const [userId, setUserId] = useState(null)
-    const statusContext = useContext(StatusContext)
+    const [createType, setCreateType] = useState(true)
+    const [accountType, setAccountType] = useState(false)
+    
 
     useEffect(()=>{
         const auth_ = getAuth()
@@ -42,6 +45,28 @@ const LoginPage = ({navigation, route}) => {
         await signOut(auth)
     }
     
+
+    async function signUp(){
+        try{
+        const userCredential = await createUserWithEmailAndPassword(auth, enteredEmail, enteredPassword)
+        console.log("sign up success " + userCredential.user.uid)
+        setupUserData(userCredential.user.uid)
+        }catch(error){
+            console.log(error)
+        }
+    }
+
+    async function setupUserData(uid){
+        try{
+          await setDoc(doc(db, "users" , uid),{
+            type:accountType,
+            totalScore:0
+          })
+        }catch(error){
+          console.log("error addDocument" + error)
+        }
+      }
+
     
     async function login(){
         try{
@@ -53,11 +78,11 @@ const LoginPage = ({navigation, route}) => {
     }
 
     return (
-        <View>
+        <View style={styles.container}>
 
         <TouchableOpacity
                 activeOpacity={1}
-                style={styles.container}
+                style={styles.screenWideClick}
                 onPress={() => {
                     if(statusContext.currentUser !== null && statusContext.accountData != null && statusContext.accountData.type !== null){
                         navigation.navigate("mapPage")
@@ -65,41 +90,89 @@ const LoginPage = ({navigation, route}) => {
                 }}
         >
 
-        <Text>Login-Guesser</Text>
+        <Text style={styles.title}>Login-Guesser</Text>
 
         { !userId &&
             <>
-        <Text>Login</Text>
+        <View style={styles.subTitleBox}>
+            <TouchableOpacity onPress={() => setCreateType(true)} style={styles.subTitle}>
+                <Text>Login</Text>
+            </TouchableOpacity>
+            
+
+
+            <TouchableOpacity onPress={() => setCreateType(false)} style={styles.subTitle}>
+                <Text>Sign up</Text>
+            </TouchableOpacity>
+            
+        </View>
+        <TextInput
+            style={styles.input}
+            onChangeText={newText => setEnteredEmail(newText)}
+            value = {enteredEmail}
+        />
 
         <TextInput
-        onChangeText={newText => setEnteredEmail(newText)}
-        value = {enteredEmail}
+            style={styles.input}
+            onChangeText={newText => setEnteredPassword(newText)}
+            value={enteredPassword}
         />
 
-        <TextInput
-        onChangeText={newText => setEnteredPassword(newText)}
-        value={enteredPassword}
-        />
+        { createType &&
+         <>
 
-        <Button
-        title='Login'
-        onPress={login}
-        />
-        
-        <Button
-        title='Sign Up'
-        onPress={() =>
+        <TouchableOpacity onPress={login} style={styles.button}>
+            <Text>Login</Text>
+        </TouchableOpacity>
 
-            navigation.navigate("signUpPage")
+        </>   
         }
-        />
 
+        { !createType &&
+         <>
+        <View style={styles.radios}>
+
+            <RadioButton
+            value="User Account"
+            status={ accountType ? 'unchecked' : 'checked' }
+            onPress={() => setAccountType(false)}
+            />
+
+            <Text style={styles.radiosText}>User Account</Text>
+
+            <RadioButton
+            value="Resturant account"
+            status={ accountType ? 'checked' : 'unchecked' }
+            onPress={() => setAccountType(true)}
+            />
+
+            <Text style={styles.radiosText}>Resturant Account</Text>
+
+        </View>
+
+            {   accountType &&
+            <>
+            <Text style={styles.infoText}>As a resturant account you'll be able to create and edit your location, but you won't be able to guess recipes</Text>
+            </>
+            }
+            
+
+            <TouchableOpacity
+            style={styles.button}
+            onPress={signUp}>
+            <Text>Sign up</Text>
+            </TouchableOpacity>
+
+        </>   
+        }
 
         <Text
+            style={styles.noAccount}
             onPress={() => {
-            statusContext.setAccountData({type: null})
-            statusContext.setCurrentUser({uid:"none"})    
-            navigation.navigate("mapPage")}
+                statusContext.setAccountData({type: null})
+                statusContext.setCurrentUser({uid:"none"})    
+                navigation.navigate("mapPage")
+            }
         }
         >Play without an Account</Text>
 
@@ -109,13 +182,17 @@ const LoginPage = ({navigation, route}) => {
         { userId &&
         <>
 
-        <Button
-        title='Sign out'
+        <Text>Tab anywhere to start</Text>
+        
+
+        <TouchableOpacity         
         onPress={(event) => {
             event.stopPropagation()
             signOut_()
         }}
-        />
+         style={styles.button}>
+            <Text>Sign out</Text>
+        </TouchableOpacity>
 
         </>}
 
@@ -128,14 +205,68 @@ const LoginPage = ({navigation, route}) => {
 export default LoginPage
 
 const styles = StyleSheet.create({
-  container: {
-    height: '100%',
-    width: '100%',
-    backgroundColor: '#fff',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  touchableBox: {
-
-  }
+    container: {
+        flex: 1,
+        flexDirection: 'column',
+        backgroundColor: "#a1e0e9",
+      },
+    screenWideClick: {
+        height: '100%',
+        width: '100%',
+        // backgroundColor: '#fff',
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    title: {
+        fontWeight: "bold",
+        fontFamily: 'sans-serif-condensed',
+        fontSize: 32,
+        textAlign:"center",
+        borderBottomColor: "black",
+        borderBottomWidth: 1,
+        top: -50
+      },
+    subTitleBox:{
+        flexDirection: 'row'
+      },
+    subTitle: {
+        flexDirection: 'row',
+        fontWeight: "bold",
+        fontFamily: 'notoserif',
+        fontSize: 18,
+        textAlign:"center",
+        borderBottomColor: "black",
+        borderBottomWidth: 2,
+        margin:8
+      },
+    input: {
+        borderColor: "black",
+        borderWidth: 1,
+        borderRadius: 8,
+        padding:3,
+        margin: 1,
+        width:200
+    },
+    button:{
+        backgroundColor: '#2293bb',
+        fontWeight: 10,
+        padding: 5,
+        width: 160,
+        borderRadius: 8,
+        borderColor: "black",
+        borderWidth: 2,
+        margin: 5
+    },
+    radios: {
+        flexDirection: "row"
+      },
+    radiosText: {
+        top: 6
+    },
+    noAccount:{
+        color: '#0000EE',
+        margin: 30,
+        borderBottomColor: '#0000EE',
+        borderBottomWidth: 1,
+    }
 });

@@ -6,7 +6,6 @@ import { initializeAuth, getReactNativePersistence } from 'firebase/auth'
 import  ReactNativeAsyncStorage from '@react-native-async-storage/async-storage';
 
 import LoginPage from './screens/loginView';
-import SignUpPage from './screens/signUpView';
 import MapPage from './screens/mapView';
 import GuessListPage from './screens/guessListView';
 import GuessTextPage from './screens/guessTextView';
@@ -32,10 +31,6 @@ export default function App() {
           <Stack.Screen
             name='loginPage'
             component={LoginPage}
-          />
-          <Stack.Screen
-            name='signUpPage'
-            component={SignUpPage}
           />
           <Stack.Screen
             name='mapPage'

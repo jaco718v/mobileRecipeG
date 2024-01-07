@@ -86,7 +86,6 @@ const MapPage = ({navigation, route}) => {
             locationId: newId
         })
         statusContext.setAccountData({...statusContext.accountData, locationId:newId})
-        //setMarkers([...markers, {...newMarker, id:newId}])
         }
         catch(error){
             console.log("sad error : ", error)
@@ -99,8 +98,6 @@ const MapPage = ({navigation, route}) => {
         setLocationName(locationData.locationName)
         setLocationDesc(locationData.locationDesc)
         statusContext.setLocationData({...locationData})
-        //setProgressBar
-
     }
 
     return( 
@@ -127,21 +124,19 @@ const MapPage = ({navigation, route}) => {
             <View style={styles.optionBar}>
             { statusContext.accountData.type === false &&
             <>
-                <Text>Progress</Text>
-                <Text>Score</Text>
+                <Text style={styles.optionText}>Welcome</Text><Text style={styles.optionText}>Account-score: {statusContext.accountData.totalScore}</Text>
             </>
             }
 
             { statusContext.accountData.type === true &&
             <>
-                <Text onPress={() => navigation.navigate('locationEditorPage')}>Create recipes</Text>
-                
+                <Text style={styles.optionText} onPress={() => navigation.navigate('locationEditorPage')}>Create recipes</Text>    
             </>
             }
 
             { statusContext.accountData.type === null &&
             <>
-                <Text>Log in to unlock additional feaures</Text>
+                <Text style={styles.optionText} >Log in to unlock additional feaures</Text>
             </>
             }
             </View>
@@ -151,26 +146,34 @@ const MapPage = ({navigation, route}) => {
 
             <View style={styles.createBox}>
                 <TextInput
+                    style={styles.topText}
                     onChangeText={newText => setLocationName(newText)}
                     value = {locationName}
                 />
 
                 <TextInput
+                    style={styles.bottomText}
+                    multiline={true}
+                    numberOfLines={4}
                     onChangeText={newText => setLocationDesc(newText)}
                     value = {locationDesc}
                 />
+                
+                <View style={styles.buttonRow}>
+                    <TouchableOpacity
+                        style={styles.button}
+                        onPress={() => setShowCreate(!showCreate)}
+                    >
+                        <Text>Cancel</Text> 
+                    </TouchableOpacity>
 
-                <TouchableOpacity
-                onPress={() => setShowCreate(!showCreate)}
-                >
-                    <Text style={styles.backgroundText}>Cancel</Text> 
-                </TouchableOpacity>
-
-                <TouchableOpacity
-                onPress={createLocation}
-                >
-                    <Text style={styles.backgroundText}>Create</Text> 
-                </TouchableOpacity>
+                    <TouchableOpacity
+                    style={styles.button}
+                    onPress={createLocation}
+                    >
+                        <Text>Create</Text> 
+                    </TouchableOpacity>
+                </View>
             </View>
             </>
             }
@@ -178,21 +181,32 @@ const MapPage = ({navigation, route}) => {
             {showLocation &&
             <>
             <View style={styles.showBox}>
-              <Text>{locationName}</Text>
+              <Text style={styles.topText}>{locationName}</Text>
 
-              <Text>{locationDesc}</Text>
+              <Text
+                multiline={true}
+                numberOfLines={4}
+                style={styles.bottomText}
+              >{locationDesc}</Text>
 
+              <View style={styles.buttonRow}>
                 <TouchableOpacity>
-                    <Text style={styles.backgroundText}
+                    <Text style={styles.button}
                     onPress={() => setShowLocation(!showLocation)}
                     >Close</Text> 
                 </TouchableOpacity>
 
                 <TouchableOpacity>
-                    <Text style={styles.backgroundText}
+                    {statusContext.accountData.type === false &&
+                    <>
+                    <Text style={styles.button}
                     onPress={() => navigation.navigate("guessListPage")}
                     >Open</Text> 
+                    </>
+                    }
+
                 </TouchableOpacity>
+              </View>
             </View>
 
             </>
@@ -205,6 +219,12 @@ const MapPage = ({navigation, route}) => {
 export default MapPage
 
 const styles = StyleSheet.create({
+    container: {
+        flex: 1,
+        backgroundColor: '#fff',
+        alignItems: 'center',
+        justifyContent: 'center',
+      },
     map: {
         width: '100%',
         height:'100%'
@@ -212,22 +232,63 @@ const styles = StyleSheet.create({
     optionBar:{
         position: 'absolute',
         flexDirection: 'row',
+        justifyContent: 'space-between',
         height: '5%',
         width: '100%',
-        backgroundColor: '#a9c1c8'
+        backgroundColor: '#a9c1c8',
+        top: 0,
+        borderBottomColor: "black",
+        borderBottomWidth: 1,
     },
     createBox:{
         position: 'absolute',
         height: '30%',
         width: '100%',
         bottom: 0,
-        backgroundColor: '#a9c1c8'
+        backgroundColor: '#a1e0e9'
     },
     showBox:{
         position: 'absolute',
         height: '30%',
         width: '100%',
         bottom: 0,
-        backgroundColor: '#a9c1c8'
+        backgroundColor: '#5D98CB'
+    },
+    button:{
+        backgroundColor: '#a9c1c8',
+        padding: 5,
+        height:45,
+        width: 170,
+        top: 75,
+        textAlign: 'center',
+        borderTopColor: "black",
+        borderTopWidth: 1,
+        borderRightColor: "black",
+        borderRightWidth: 1,
+    },
+    buttonRow:{
+      flexDirection: 'row',
+      borderTopLeftRadius: 10 
+    },
+    input:{
+
+    },
+    optionText:{
+        margin: 3,
+        paddingLeft:10,
+        paddingRight:10
+    },
+    topText:{
+        borderTopColor: "black",
+        borderTopWidth: 1,
+        backgroundColor:'#8FC992',
+        padding:3
+    }, 
+    bottomText:{
+        borderTopColor: "black",
+        borderTopWidth: 1,
+        padding:3
     }
+
+
 })

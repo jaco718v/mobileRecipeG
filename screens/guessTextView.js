@@ -2,7 +2,7 @@ import { Button, StyleSheet, Text, View } from 'react-native'
 import { useEffect, useState,useContext } from 'react'
 import {StatusContext} from '../context/context'
 import { db } from '../components/config'
-import { doc, getDoc, setDoc} from 'firebase/firestore'
+import { doc, getDoc, setDoc, updateDoc} from 'firebase/firestore'
 import { PanGestureHandler, GestureHandlerRootView } from 'react-native-gesture-handler'
 import Animated, { useSharedValue, useAnimatedGestureHandler, useAnimatedStyle, getRelativeCoords, useAnimatedRef, runOnJS } from 'react-native-reanimated'
 
@@ -78,6 +78,10 @@ const GuessTextPage = ({navigation, route}) => {
                 await setDoc(scoreRef,{
                     score: score,
                     hasImage:false
+                })
+                const userRef = doc(db, "users", statusContext.currentUser.uid)
+                await updateDoc(userRef,{
+                    totalScore: statusContext.accountData.totalScore + score,
                 })
             }
             navigation.navigate("guessListPage")

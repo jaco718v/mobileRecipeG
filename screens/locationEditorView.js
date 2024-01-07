@@ -18,7 +18,7 @@ const LocationEditorPage = ({navigation, route}) => {
     const [imageGuessValues, imageGuessLoading, imageGuessError] = useCollection(collection(db, "locationMarkers", String(statusContext.accountData.locationId), 'imageGuess'))
     const imageGuessList = imageGuessValues?.docs.map((_doc) => ({..._doc.data(), id:_doc.id}))
     const [createType, setCreateType] = useState(true)
-    const [enteredRecipeName, setEnteredRecipeName] = useState('Unnamed')
+    const [enteredRecipeName, setEnteredRecipeName] = useState(null)
     const [ingredientList, setIngredientList] = useState([{name:"", id:0}])
     const [imageList, setImageList] = useState([])
     const [nextId, setNextId] = useState(0)
@@ -32,7 +32,9 @@ const LocationEditorPage = ({navigation, route}) => {
 
 
     function addIngredientField(){
-        setIngredientList([...ingredientList, {name:"", id:ingredientList.length}])
+        if(ingredientList.lenght < 10){
+            setIngredientList([...ingredientList, {name:"", id:ingredientList.length}])
+    }
     }
 
     function removeImage(id){
@@ -40,7 +42,7 @@ const LocationEditorPage = ({navigation, route}) => {
     }
 
     function removeIngredient(id){
-        setIngredientList([ingredientList.sort((n) => n.id != id)])
+        setIngredientList([...ingredientList.filter((n) => n.id != id)])
     }
 
     async function submitTextRecipe(){
@@ -87,103 +89,123 @@ const LocationEditorPage = ({navigation, route}) => {
 
 
     async function useCamera(){
-        const result = await ImagePicker.requestCameraPermissionsAsync()
-        if(result.granted === false){
-            alert('No camera access')
-        }
-        ImagePicker.launchCameraAsync()
-        .then(response => {
-            if(!response.canceled){
-                setImageList([...imageList, {uri: response.assets[0].uri, id: imageList.length}])
+
+        if(imageList.length < 7){
+            const result = await ImagePicker.requestCameraPermissionsAsync()
+            if(result.granted === false){
+                alert('No camera access')
             }
-        })
-        .catch(error => alert('Camera error: '+ error))
+            ImagePicker.launchCameraAsync()
+            .then(response => {
+                if(!response.canceled){
+                    setImageList([...imageList, {uri: response.assets[0].uri, id: imageList.length}])
+                }
+            })
+            .catch(error => alert('Camera error: '+ error))
+    }
     }
 
     async function launchImagePicker(){
-        let result = await ImagePicker.launchImageLibraryAsync({
-          allowsEditing: true
-        })
-        if(!result.canceled){
-          setImageList([...imageList, {uri: result.assets[0].uri, id: imageList.length}])
+        if(imageList.length < 7){
+            let result = await ImagePicker.launchImageLibraryAsync({
+            allowsEditing: true
+            })
+            if(!result.canceled){
+            setImageList([...imageList, {uri: result.assets[0].uri, id: imageList.length}])
+            }
         }
-      }
-
+    }
 
     return(
         <View style={styles.container}>
-            <Text>Create a new recipe quiz</Text>
+            <Text style={styles.title}>Create a new recipe quiz</Text>
 
-            <Button
-            title='List me'
-            onPress={() => console.log(imageList)}
-            />
+            <View style={styles.radios}>
+                <RadioButton
+                value="Text-based Quiz"
+                status={ createType ? 'checked' : 'unchecked' }
+                onPress={() => setCreateType(true)}
+                />
+                <Text style={styles.radiosText}>Text-based</Text>
+                <RadioButton
+                value="Image-based Quiz"
+                status={ createType ? 'unchecked' : 'checked' }
+                onPress={() => setCreateType(false)}
+                />
+                <Text style={styles.radiosText}>Image-based</Text>
+            </View>
 
-            <RadioButton
-              value="Text-based Quiz"
-              status={ createType ? 'checked' : 'unchecked' }
-              onPress={() => setCreateType(true)}
-            />
-            <RadioButton
-              value="Image-based Quiz"
-              status={ createType ? 'unchecked' : 'checked' }
-              onPress={() => setCreateType(false)}
-            />
 
             <TextInput
+                placeholder='Enter recipe name'
+                style={styles.input}
                 onChangeText={newText => setEnteredRecipeName(newText)}
                 value={enteredRecipeName}
             />
 
             { createType &&
             <>
-                {ingredientList.map((ingredient, i) => (
-                    <View
-                    key={ingredient.id}
-                    >
-                        <TextInput
-                            
-                            onChangeText={newText => setIngredientList(ingredientList.map((n) => n.id === ingredient.id ? {...n, name:newText} : n))}
-                            value={ingredient.name}
-                        />
-                        <Text onPress={() => removeIngredient(ingredient.id)}>X</Text>
-                    </View>
-                ))}
+            <View style={styles.createBox}>
 
-                <TouchableOpacity onPress={addIngredientField}>
+                <TouchableOpacity onPress={addIngredientField} style={styles.buttonSmall}>
                     <Text>Add ingredient</Text>
                 </TouchableOpacity>
 
+                {ingredientList.map((ingredient, i) => (
+                    <View
+                    style={styles.inputRow}
+                    key={ingredient.id}
+                    >
+                        <TextInput
+                            placeholder='Ingredient name'
+                            style={styles.input}
+                            onChangeText={newText => setIngredientList(ingredientList.map((n) => n.id === ingredient.id ? {...n, name:newText} : n))}
+                            value={ingredient.name}
+                        />
+                        <TouchableOpacity style={styles.buttonX} onPress={() => removeIngredient(ingredient.id)}>
+                            <Text style={{left:6}} >X</Text>
+                        </TouchableOpacity>
+                    </View>
+                ))}
+
+
+            </View>
             </>
             }
 
             { !createType &&
             <>
-                <TouchableOpacity onPress={useCamera}>
-                    <Text>Use Camera</Text>
-                </TouchableOpacity>
+                <Text style={styles.infoText}>Tab image to delete</Text>
 
-                <TouchableOpacity onPress={launchImagePicker}>
-                    <Text>Select File</Text>
-                </TouchableOpacity>
+                <View style={styles.buttonRow}>
+                    <TouchableOpacity onPress={useCamera} style={styles.button}>
+                        <Text>Use Camera</Text>
+                    </TouchableOpacity>
 
-                <Text>Tab image to delete</Text>
+                    <TouchableOpacity onPress={launchImagePicker} style={styles.button}>
+                        <Text>Select File</Text>
+                    </TouchableOpacity>
+                </View>
 
-                {imageList.map(image => (
-                    <View
-                    key={image.id}
-                    >
-                        <TouchableOpacity 
-                        onPress={() => removeImage(image.id)}
+                
+
+                <View style={styles.imageRow}>
+                    {imageList.map(image => (
+                        <View
+                        key={image.id}
                         >
-                            <Image  source={{uri:image.uri}} style={styles.imgStyle}></Image>
-                        </TouchableOpacity>
-                    </View>
+                            <TouchableOpacity 
+                            onPress={() => removeImage(image.id)}
+                            >
+                                <Image  source={{uri:image.uri}} style={styles.imgStyle}></Image>
+                            </TouchableOpacity>
+                        </View>
                 ))}
+                </View>
             </>
             }
 
-                <TouchableOpacity onPress={createType? submitTextRecipe : submitImageRecipe}>
+                <TouchableOpacity  style={styles.button} onPress={createType? submitTextRecipe : submitImageRecipe}>
                     <Text>Finish recipe quiz</Text>
                 </TouchableOpacity>
 
@@ -195,14 +217,96 @@ export default LocationEditorPage
 
 const styles = StyleSheet.create({
     container: {
+      flex:1, 
       height: '100%',
       width: '100%',
-      backgroundColor: '#fff',
+      backgroundColor: "#a1e0e9",
       alignItems: 'center',
-      justifyContent: 'center',
+      
+    },
+    title: {
+        fontWeight: "bold",
+        fontFamily: 'sans-serif-condensed',
+        fontSize: 24,
+        textAlign:"center",
+        borderBottomColor: "black",
+        borderBottomWidth: 1, 
+      },
+ 
+    radios: {
+        flexDirection: "row",
+        
+      }, 
+    radiosText: {
+        top: 6
+    },
+    createBox:{
+        top:30
+    },
+    inputRow:{
+       flexDirection:'row'
+    },
+    input: {
+        borderColor: "black",
+        borderWidth: 1,
+        borderRadius: 8,
+        padding:3,
+        margin: 1,
+        width:200
+    },
+    button:{
+        backgroundColor: '#2293bb',
+        padding: 5,
+        width: 160,
+        borderRadius: 8,
+        borderColor: "black",
+        borderWidth: 2,
+        margin: 5,
+        top: 40
+    },
+    buttonSmall:{
+        backgroundColor: 'grey',
+        padding: 3,
+        width: 130,
+        borderRadius: 8,
+        borderColor: "black",
+        borderWidth: 2,
+        margin: 3,
+        left: 50,
+        bottom: 5
+    },
+    buttonX:{
+        height: 31,
+        width: 26,
+        borderRadius: 8,
+        borderColor: "black",
+        borderWidth: 2,
+        backgroundColor: 'grey',
+        textAlign: 'center',
+        justifyContent: 'center',
+        margin: 3,
+    },
+    buttonRow:{
+        flexDirection: 'row'
+
+    },
+    infoText:{
+        top: 35
+    },
+    imageRow:{
+        alignItems: 'normal',
+        flexDirection: 'row',
+        height: 200,
+        top: 40,
+        flexWrap: 'wrap',
+         
     },
     imgStyle:{
-        height:60,
-        width: 60
-    }
+        height:90,
+        width: 90,
+        borderRadius: 10,
+        borderWidth: 2,
+        borderColor: "black",
+        padding: 10 
+    },
 })

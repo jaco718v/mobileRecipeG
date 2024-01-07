@@ -1,7 +1,7 @@
 import { StyleSheet, Text, View, Image, TouchableOpacity, Button } from 'react-native'
 import { useState, useEffect, useContext } from 'react'
 import { storage } from '../components/config'
-import { doc, setDoc } from 'firebase/firestore'
+import { doc, setDoc, updateDoc } from 'firebase/firestore'
 import { StatusContext } from "../context/context"
 import { ref, getDownloadURL} from "firebase/storage"
 import { PanGestureHandler, GestureHandlerRootView } from 'react-native-gesture-handler'
@@ -98,6 +98,10 @@ const GuessImagePage = ({navigation, route}) => {
                 await setDoc(scoreRef,{
                     score: score,
                     hasImage:false
+                })
+                const userRef = doc(db, "users", statusContext.currentUser.uid)
+                await updateDoc(userRef,{
+                    totalScore: statusContext.accountData.totalScore + score,
                 })
             }
             navigation.navigate("guessListPage")
