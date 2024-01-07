@@ -12,7 +12,7 @@ import { RadioButton } from 'react-native-paper';
 const LoginPage = ({navigation, route}) => {
     let auth = getAuth()
     const statusContext = useContext(StatusContext)
-    const [enteredEmail, setEnteredEmail] = useState("testttest@gmail.com")
+    const [enteredEmail, setEnteredEmail] = useState("testtest@gmail.com")
     const [enteredPassword, setEnteredPassword] = useState("1234test")
     const [userId, setUserId] = useState(null)
     const [createType, setCreateType] = useState(true)
@@ -96,13 +96,13 @@ const LoginPage = ({navigation, route}) => {
             <>
         <View style={styles.subTitleBox}>
             <TouchableOpacity onPress={() => setCreateType(true)} style={styles.subTitle}>
-                <Text>Login</Text>
+                <Text style={createType? styles.active : null}>Login</Text>
             </TouchableOpacity>
             
 
 
             <TouchableOpacity onPress={() => setCreateType(false)} style={styles.subTitle}>
-                <Text>Sign up</Text>
+                <Text style={createType? null : styles.active} >Sign up</Text>
             </TouchableOpacity>
             
         </View>
@@ -268,5 +268,8 @@ const styles = StyleSheet.create({
         margin: 30,
         borderBottomColor: '#0000EE',
         borderBottomWidth: 1,
+    },
+    active:{
+        color: 'blue'
     }
 });

@@ -104,11 +104,11 @@ const GuessListPage = ({navigation, route}) => {
             <View style={showImage? styles.fadedContainer : null}>
                 <View style={styles.buttonRow}>
                 <TouchableOpacity style={styles.button} onPress={() => setDifficulty(true)} >
-                    <Text>Text</Text>
+                    <Text style={difficulty? styles.active : null }>Text</Text>
                 </TouchableOpacity>
 
                 <TouchableOpacity style={styles.button} onPress={() => setDifficulty(false)} >
-                    <Text>Image</Text>
+                    <Text style={difficulty? null : styles.active}>Image</Text>
                 </TouchableOpacity>
             </View>
 
@@ -221,6 +221,9 @@ const styles = StyleSheet.create({
         backgroundColor: '#fff',
         justifyContent: 'center',
         opacity: 0.2  
+    },
+    active:{
+        color: 'blue'
     }
 
 })

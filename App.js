@@ -19,9 +19,9 @@ export default function App() {
   if(Platform.OS === 'web'){
   auth = getAuth(app)
   }else{
-  // auth = initializeAuth(app, {
-  //     persistence:getReactNativePersistence(ReactNativeAsyncStorage)
-  // })
+  auth = initializeAuth(app, {
+      persistence:getReactNativePersistence(ReactNativeAsyncStorage)
+  })
   }
 
   return (

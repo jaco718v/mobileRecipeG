@@ -127,16 +127,12 @@ const GuessImagePage = ({navigation, route}) => {
             },
             onEnd:(event) => {
                 const coordinates = getRelativeCoords(animatedRef, event.absoluteX, event.absoluteY)
-                console.log(coordinates)
                 if(coordinates.x > 20 && coordinates.x < 150 && coordinates.y > 500){
                     runOnJS(onMove)(image)
                 } else {
                     translateX.value = withSpring(0)
                     translateY.value = withSpring(0)
                 }
-                //if(coordstuff)
-                //
-                //withSpring if not
             }
         })
         
@@ -172,6 +168,10 @@ const GuessImagePage = ({navigation, route}) => {
             ))}
             
             <View style={styles.buttonRow}>
+
+            { !showScore &&
+                <>
+                
                 <SimpleLineIcons name="trash" size={100} color="black" paddingRight={5}/>
             
                 <TouchableOpacity style={styles.button} onPress={undoTrash}>
@@ -183,16 +183,24 @@ const GuessImagePage = ({navigation, route}) => {
                 onPress={checkAndSubmitAnswers}>
                     <Ionicons name="checkmark" size={50} color="black" />
                 </TouchableOpacity>
+                </>
+            }
+
+
 
                 { showScore &&
                 <>
-                <View styles={styles.scoreBox}>
-                    <Text>Your score: {score}</Text>
+                <View >
+                    <Text style={styles.scoreText}>Your score: {score}</Text>
+
                 </View>
                 </>
-                }
+            }
+
             </View>
           
+
+
         </View>
     </GestureHandlerRootView>
 
@@ -268,12 +276,12 @@ const styles  = StyleSheet.create({
         borderColor: "black",
         borderWidth: 2,   
     },
-    scoreBox:{
-        position:'absolute', 
-        backgroundColor: '#fff',
+    scoreText:{
+        position: 'absolute',
         alignItems: 'center',
         justifyContent: 'center',
-        width:'100%',
-        height: '100%'
+        fontSize: 18,
+        bottom: 40,
+        left: 40
     }
 })
