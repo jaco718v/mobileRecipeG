@@ -6,14 +6,14 @@ import { StatusContext } from "../context/context"
 import { getDoc, doc, setDoc } from 'firebase/firestore';
 import { getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut, createUserWithEmailAndPassword } from 'firebase/auth'
 import { RadioButton } from 'react-native-paper';
-
+import { successToast, errorToast } from '../util/util';
 
 
 const LoginPage = ({navigation, route}) => {
     let auth = getAuth()
     const statusContext = useContext(StatusContext)
-    const [enteredEmail, setEnteredEmail] = useState("testtest@gmail.com")
-    const [enteredPassword, setEnteredPassword] = useState("1234test")
+    const [enteredEmail, setEnteredEmail] = useState("")
+    const [enteredPassword, setEnteredPassword] = useState("")
     const [userId, setUserId] = useState(null)
     const [createType, setCreateType] = useState(true)
     const [accountType, setAccountType] = useState(false)
@@ -37,9 +37,15 @@ const LoginPage = ({navigation, route}) => {
 
 
     async function getAccountData(data){
-        const userdata = await getDoc(doc(db ,"users" , data.uid ))
-        statusContext.setAccountData({...userdata.data(), id: userdata.id})
+        try{
+            const userdata = await getDoc(doc(db ,"users" , data.uid ))
+            statusContext.setAccountData({...userdata.data(), id: userdata.id})
+        }catch(error){
+            errorToast('Error getting accountData')
+        }
     }
+
+    
 
     async function signOut_(){
         await signOut(auth)
@@ -48,11 +54,12 @@ const LoginPage = ({navigation, route}) => {
 
     async function signUp(){
         try{
-        const userCredential = await createUserWithEmailAndPassword(auth, enteredEmail, enteredPassword)
-        console.log("sign up success " + userCredential.user.uid)
-        setupUserData(userCredential.user.uid)
+            const userCredential = await createUserWithEmailAndPassword(auth, enteredEmail, enteredPassword)
+            console.log("sign up success " + userCredential.user.uid)
+            setupUserData(userCredential.user.uid)
         }catch(error){
-            console.log(error)
+            console.log("oi")
+            errorToast('Email already has an account')
         }
     }
 
@@ -70,12 +77,14 @@ const LoginPage = ({navigation, route}) => {
     
     async function login(){
         try{
-        const userCredential = await signInWithEmailAndPassword(auth, enteredEmail, enteredPassword)
-        console.log('Logged in' + userCredential.user.uid)
+            const userCredential = await signInWithEmailAndPassword(auth, enteredEmail, enteredPassword)
+            successToast("Successfully logged in")
+
         }catch(error){
-        console.log(error)
+            errorToast('Incorrect email/password')
         }
     }
+
 
     return (
         <View style={styles.container}>

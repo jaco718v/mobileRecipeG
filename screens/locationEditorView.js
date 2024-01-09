@@ -9,6 +9,7 @@ import * as ImagePicker from "expo-image-picker"
 import { useCollection } from 'react-firebase-hooks/firestore'
 import { getNextId } from "../util/util";
 import { ref, uploadBytes } from "firebase/storage"
+import { successToast, errorToast } from '../util/util';
 
 
 const LocationEditorPage = ({navigation, route}) => {
@@ -32,7 +33,7 @@ const LocationEditorPage = ({navigation, route}) => {
 
 
     function addIngredientField(){
-        if(ingredientList.lenght < 10){
+        if(ingredientList.length < 10){
             setIngredientList([...ingredientList, {name:"", id:ingredientList.length}])
     }
     }
@@ -47,13 +48,18 @@ const LocationEditorPage = ({navigation, route}) => {
 
     async function submitTextRecipe(){
         if(ingredientList.length > 1 && ingredientList.length < 10){
-            const ingredientNameList = ingredientList.map((n) => n.name)
-            const scoreRef = doc(db, "locationMarkers", String(statusContext.accountData.locationId), 'textGuess', String(nextId))
-                await setDoc(scoreRef,{
-                    ingredients: ingredientNameList,
-                    name: enteredRecipeName   
-                })
+            try{
+                const ingredientNameList = ingredientList.map((n) => n.name)
+                const scoreRef = doc(db, "locationMarkers", String(statusContext.accountData.locationId), 'textGuess', String(nextId))
+                    await setDoc(scoreRef,{
+                        ingredients: ingredientNameList,
+                        name: enteredRecipeName   
+                    })
+            successToast("Recipe saved and uploaded")
             navigation.navigate('mapPage')
+        } catch(error){
+            errorToast("Error while saving recipe")
+            }
         } else{
             console.log("Size cannot exceed 9 or be less than 2")
         }
@@ -62,13 +68,18 @@ const LocationEditorPage = ({navigation, route}) => {
 
     async function submitImageRecipe(){
         if(imageList.length > 2 && imageList.length < 7){
-        uploadImages()
-        const scoreRef = doc(db, "locationMarkers", String(statusContext.accountData.locationId), 'imageGuess', String(nextId))
-            await setDoc(scoreRef,{
-                numberOfImages: imageList.length,
-                name: enteredRecipeName     
-            })
-        navigation.navigate('mapPage')
+            try{
+                uploadImages()
+                const scoreRef = doc(db, "locationMarkers", String(statusContext.accountData.locationId), 'imageGuess', String(nextId))
+                    await setDoc(scoreRef,{
+                        numberOfImages: imageList.length,
+                        name: enteredRecipeName     
+                    })
+                successToast("Recipe saved and uploaded")
+                navigation.navigate('mapPage')
+            }catch(error){
+                errorToast("Error while saving recipe")
+            }
         } else{
             console.log("Size cannot exceed 6 or be less than 3")
         }
@@ -101,7 +112,7 @@ const LocationEditorPage = ({navigation, route}) => {
                     setImageList([...imageList, {uri: response.assets[0].uri, id: imageList.length}])
                 }
             })
-            .catch(error => alert('Camera error: '+ error))
+            .catch(error => errorToast("Error using camera"))
     }
     }
 
@@ -111,7 +122,7 @@ const LocationEditorPage = ({navigation, route}) => {
             allowsEditing: true
             })
             if(!result.canceled){
-            setImageList([...imageList, {uri: result.assets[0].uri, id: imageList.length}])
+                setImageList([...imageList, {uri: result.assets[0].uri, id: imageList.length}])
             }
         }
     }

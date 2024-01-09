@@ -6,6 +6,7 @@ import { StatusContext } from "../context/context"
 import { useState, useEffect, useContext } from 'react'
 import { MaterialIcons, AntDesign } from '@expo/vector-icons'
 import { ref, uploadBytes, getDownloadURL} from "firebase/storage"
+import { successToast, errorToast } from '../util/util';
 import { useCollection } from 'react-firebase-hooks/firestore'
 
 const GuessListPage = ({navigation, route}) => {
@@ -49,7 +50,7 @@ const GuessListPage = ({navigation, route}) => {
     async function useCamera(recipe){
         const result = await ImagePicker.requestCameraPermissionsAsync()
         if(result.granted === false){
-            alert('No camera access')
+            errorToast("Camera does not have permission")
         }
         ImagePicker.launchCameraAsync()
         .then(response => {
@@ -57,7 +58,7 @@ const GuessListPage = ({navigation, route}) => {
                 uploadImage(response.assets[0].uri, recipe)
             }
         })
-        .catch(error => alert('Camera error: '+ error))
+        .catch(error => errorToast("Camera encountered an error"))
     }
 
     async function uploadImage(image, recipe){
@@ -68,7 +69,7 @@ const GuessListPage = ({navigation, route}) => {
         const storageRef = ref(storage,`meal-${userId}-${locationId}-${recipe.id}.jpg`)
         uploadBytes(storageRef, blob).then((snapshot) => {
           updateHasImage(recipe)
-          alert("image uploaded")
+          successToast("Image successfully uploaded")
         })
       }
 
@@ -77,13 +78,13 @@ const GuessListPage = ({navigation, route}) => {
           hasImage:true,
           score: recipe.score + 30
          }).catch((error) => {
-          console.log(error)
+          errorToast("Error in updating score")
         })
         const userRef = doc(db, "users", statusContext.currentUser.uid)
         await updateDoc(userRef,{
             totalScore: statusContext.accountData.totalScore + recipe.score,
         }).catch((error) => {
-            console.log(error)
+            errorToast("Error in updating score")
         })
       }
 
@@ -95,7 +96,7 @@ const GuessListPage = ({navigation, route}) => {
             setImagePath(url)
             setShowImage(true)
         }).catch((error) => {
-          console.log("fejl i image dowload " + error)
+            errorToast("Error in download")
         })
       }
 

@@ -5,6 +5,7 @@ import { db } from '../components/config'
 import { doc, getDoc, setDoc, updateDoc} from 'firebase/firestore'
 import { PanGestureHandler, GestureHandlerRootView } from 'react-native-gesture-handler'
 import Animated, { useSharedValue, useAnimatedGestureHandler, useAnimatedStyle, getRelativeCoords, useAnimatedRef, runOnJS } from 'react-native-reanimated'
+import { successToast, errorToast } from '../util/util';
 
 const GuessTextPage = ({navigation, route}) => {
     const recipeData = route.params?.guessContent
@@ -22,7 +23,11 @@ const GuessTextPage = ({navigation, route}) => {
                 const data = docSnap.data()
                 createGuessOptions(data.dummies, recipeData.ingredients)
         }
-        getDocument(dummyRef)
+        try{
+            getDocument(dummyRef)
+        } catch{
+            errorToast("Error while getting quiz-data")
+        }
     },[])
 
 
@@ -67,25 +72,25 @@ const GuessTextPage = ({navigation, route}) => {
             totalAnswers =  recipeData.ingredients.length
         }
     
-        const score = Math.floor((rightAnswers / totalAnswers )*100)
+        const _score = Math.floor((rightAnswers / totalAnswers )*100)
         
         setShowScore(true)
-        setScore(score)
+        setScore(_score)
 
 
         console.log(statusContext.accountData.type)
         setTimeout(async () => {
             if(statusContext.accountData.type !== null){
-                console.log('oi')
                 const scoreRef = doc(db, "users", statusContext.currentUser.uid, "history", String(statusContext.locationData.id), "scores", String(recipeData.id))
                 await setDoc(scoreRef,{
-                    score: score,
+                    score: _score,
                     hasImage:false
                 })
                 const userRef = doc(db, "users", statusContext.currentUser.uid)
                 await updateDoc(userRef,{
-                    totalScore: statusContext.accountData.totalScore + score,
+                    totalScore: statusContext.accountData.totalScore + _score,
                 })
+                statusContext.accountData.totalScore = statusContext.accountData.totalScore + _score
             }
             navigation.navigate("guessListPage")
 

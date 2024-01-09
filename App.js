@@ -4,6 +4,7 @@ import StatusContextProvider from './context/context';
 import { app } from './components/config';
 import { initializeAuth, getReactNativePersistence } from 'firebase/auth'
 import  ReactNativeAsyncStorage from '@react-native-async-storage/async-storage';
+import Toast from 'react-native-toast-message'
 
 import LoginPage from './screens/loginView';
 import MapPage from './screens/mapView';
@@ -54,6 +55,10 @@ export default function App() {
           />
         </Stack.Navigator>
       </NavigationContainer>
+      <Toast
+              position='bottom'
+              bottomOffset={20}
+      />
     </StatusContextProvider>
   );
 }

@@ -7,7 +7,7 @@ import { StatusContext } from "../context/context"
 import { TouchableOpacity, View, Text, TextInput, StyleSheet } from 'react-native'
 import { getNextId } from '../util/util'
 import { useCollection } from 'react-firebase-hooks/firestore'
-
+import { successToast, errorToast } from '../util/util';
 
 const MapPage = ({navigation, route}) => {
     const statusContext = useContext(StatusContext)
@@ -16,8 +16,8 @@ const MapPage = ({navigation, route}) => {
     const [markerData, setMarkerData] = useState(null)
     const [showLocation, setShowLocation] = useState(false)
     const [showCreate, setShowCreate] = useState(false)
-    const [locationName, setLocationName] = useState('Unnamed')
-    const [locationDesc, setLocationDesc] = useState('desc')
+    const [locationName, setLocationName] = useState('')
+    const [locationDesc, setLocationDesc] = useState('')
     const [region, setRegion] = useState({
         latitude: 55,
         longitude: 12,
@@ -86,11 +86,11 @@ const MapPage = ({navigation, route}) => {
             locationId: newId
         })
         statusContext.setAccountData({...statusContext.accountData, locationId:newId})
+        successToast("Location successfully created")
         }
         catch(error){
-            console.log("sad error : ", error)
+            errorToast("Encountered an error while creating location")
         }
-
     }
 
     function onMarkerPressed(locationData){
@@ -130,7 +130,10 @@ const MapPage = ({navigation, route}) => {
 
             { statusContext.accountData.type === true &&
             <>
-                <Text style={styles.optionText} onPress={() => navigation.navigate('locationEditorPage')}>Create recipes</Text>    
+                <Text style={styles.optionText} onPress={() => {
+                    if(statusContext.accountData.locationId)
+                    navigation.navigate('locationEditorPage')}}>
+                        Create recipes</Text>    
             </>
             }
 
@@ -144,21 +147,24 @@ const MapPage = ({navigation, route}) => {
             {showCreate &&
             <>
 
-            <View style={styles.createBox}>
-                <TextInput
-                    style={styles.topText}
-                    onChangeText={newText => setLocationName(newText)}
-                    value = {locationName}
-                />
+            <View style={styles.infoBox}>
+                <View style={styles.infoText}>
+                    <TextInput
+                        placeholder='Enter name of location'
+                        style={styles.topText}
+                        onChangeText={newText => setLocationName(newText)}
+                        value = {locationName}
+                    />
 
-                <TextInput
-                    style={styles.bottomText}
-                    multiline={true}
-                    numberOfLines={4}
-                    onChangeText={newText => setLocationDesc(newText)}
-                    value = {locationDesc}
-                />
-                
+                    <TextInput
+                        placeholder='Enter a description of your location'
+                        style={styles.bottomText}
+                        multiline={true}
+                        numberOfLines={4}
+                        onChangeText={newText => setLocationDesc(newText)}
+                        value = {locationDesc}
+                    />
+                </View>
                 <View style={styles.buttonRow}>
                     <TouchableOpacity
                         style={styles.button}
@@ -180,15 +186,16 @@ const MapPage = ({navigation, route}) => {
 
             {showLocation &&
             <>
-            <View style={styles.showBox}>
-              <Text style={styles.topText}>{locationName}</Text>
-
-              <Text
-                multiline={true}
-                numberOfLines={4}
-                style={styles.bottomText}
-              >{locationDesc}</Text>
-
+            <View style={styles.infoBox}>
+              <View style={styles.infoText}>
+                    <Text style={styles.topText}>{locationName}</Text>
+                    
+                    <Text
+                        multiline={true}
+                        numberOfLines={3}
+                        style={styles.bottomText}
+                    >{locationDesc}</Text>
+                </View>
               <View style={styles.buttonRow}>
                 <TouchableOpacity>
                     <Text style={styles.button}
@@ -240,26 +247,21 @@ const styles = StyleSheet.create({
         borderBottomColor: "black",
         borderBottomWidth: 1,
     },
-    createBox:{
+    infoBox:{
         position: 'absolute',
-        height: '30%',
-        width: '100%',
-        bottom: 0,
-        backgroundColor: '#a1e0e9'
-    },
-    showBox:{
-        position: 'absolute',
-        height: '30%',
+        height: '40%',
         width: '100%',
         bottom: 0,
         backgroundColor: '#5D98CB'
+    },
+    infoText:{
+        flex: 4
     },
     button:{
         backgroundColor: '#a9c1c8',
         padding: 5,
         height:45,
         width: 170,
-        top: 75,
         textAlign: 'center',
         borderTopColor: "black",
         borderTopWidth: 1,
@@ -267,6 +269,7 @@ const styles = StyleSheet.create({
         borderRightWidth: 1,
     },
     buttonRow:{
+      flex: 1,
       flexDirection: 'row',
       borderTopLeftRadius: 10 
     },

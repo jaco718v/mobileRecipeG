@@ -7,6 +7,7 @@ import { ref, getDownloadURL} from "firebase/storage"
 import { PanGestureHandler, GestureHandlerRootView } from 'react-native-gesture-handler'
 import Animated, { useSharedValue, useAnimatedGestureHandler, useAnimatedStyle, withSpring, getRelativeCoords, useAnimatedRef, runOnJS } from 'react-native-reanimated'
 import { SimpleLineIcons, FontAwesome, Ionicons } from '@expo/vector-icons'
+import { successToast, errorToast } from '../util/util';
 
 const GuessImagePage = ({navigation, route}) => {
     const guessOptions = route.params?.guessContent
@@ -21,7 +22,13 @@ const GuessImagePage = ({navigation, route}) => {
     useEffect (() => {
         const totalDummies = 6
         const mixedArray = createImageList(totalDummies, guessOptions.numberOfImages)
-        downloadImages(mixedArray)
+        try{
+            downloadImages(mixedArray)
+        }
+        catch(error){
+            errorToast("Error in getting images")
+        }
+        
     },[])
 
     async function downloadImages(imageData){
@@ -65,7 +72,7 @@ const GuessImagePage = ({navigation, route}) => {
 
     function undoTrash(){
         if(trash.length > 0 ){ 
-            const firstIndex = {...trash[0]}
+            const firstIndex = {...trash[trash.length-1]}
             setGuessImages(guessImages.map((n) => n.id === firstIndex.id ? {...n, visible:true} : n))
             setTrash(prevImages => prevImages.filter((n) => n.id != firstIndex.id))
         }
@@ -83,26 +90,29 @@ const GuessImagePage = ({navigation, route}) => {
             }
         } 
 
+        console.log( rightAnswers, totalAnswers)
+
         if(totalAnswers < guessOptions.numberOfImages){
             totalAnswers =  guessOptions.numberOfImages
         }
 
-        const score = Math.floor((rightAnswers / totalAnswers )*100)
+        const _score = Math.floor((rightAnswers / totalAnswers )*100)
         
         setShowScore(true)
-        setScore(score)
+        setScore(_score)
 
         setTimeout(async () => {
             if(statusContext.accountData.type !== null){
                 const scoreRef = doc(db, "users", statusContext.currentUser.uid, "history", String(statusContext.locationData.id), "scores", String(guessOptions.id))
                 await setDoc(scoreRef,{
-                    score: score,
+                    score: _score,
                     hasImage:false
                 })
                 const userRef = doc(db, "users", statusContext.currentUser.uid)
                 await updateDoc(userRef,{
-                    totalScore: statusContext.accountData.totalScore + score,
+                    totalScore: statusContext.accountData.totalScore + _score,
                 })
+                statusContext.accountData.totalScore = statusContext.accountData.totalScore + _score
             }
             navigation.navigate("guessListPage")
         }, 2000)
