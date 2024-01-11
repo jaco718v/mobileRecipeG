@@ -1,64 +1,46 @@
-import { NavigationContainer } from '@react-navigation/native';
-import { createNativeStackNavigator } from '@react-navigation/native-stack';
-import StatusContextProvider from './context/context';
-import { app } from './components/config';
-import { initializeAuth, getReactNativePersistence } from 'firebase/auth'
-import  ReactNativeAsyncStorage from '@react-native-async-storage/async-storage';
-import Toast from 'react-native-toast-message'
+import { NavigationContainer } from "@react-navigation/native";
+import { createNativeStackNavigator } from "@react-navigation/native-stack";
+import StatusContextProvider from "./context/context";
+import { app } from "./components/config";
+import { initializeAuth, getReactNativePersistence } from "firebase/auth";
+import ReactNativeAsyncStorage from "@react-native-async-storage/async-storage";
+import Toast from "react-native-toast-message";
 
-import LoginPage from './screens/loginView';
-import MapPage from './screens/mapView';
-import GuessListPage from './screens/guessListView';
-import GuessTextPage from './screens/guessTextView';
-import GuessImagePage from './screens/guessImageView';
-import LocationEditorPage from './screens/locationEditorView';
+import LoginPage from "./screens/loginView";
+import MapPage from "./screens/mapView";
+import GuessListPage from "./screens/guessListView";
+import GuessTextPage from "./screens/guessTextView";
+import GuessImagePage from "./screens/guessImageView";
+import LocationEditorPage from "./screens/locationEditorView";
 
 export default function App() {
   const Stack = createNativeStackNavigator();
-  
-  let auth
-  if(Platform.OS === 'web'){
-  auth = getAuth(app)
-  }else{
-  auth = initializeAuth(app, {
-      persistence:getReactNativePersistence(ReactNativeAsyncStorage)
-  })
+
+  let auth;
+  if (Platform.OS === "web") {
+    auth = getAuth(app);
+  } else {
+    auth = initializeAuth(app, {
+      persistence: getReactNativePersistence(ReactNativeAsyncStorage),
+    });
   }
 
   return (
     <StatusContextProvider>
       <NavigationContainer>
-        <Stack.Navigator initialRouteName='loginPage'>
+        <Stack.Navigator initialRouteName="loginPage">
+          <Stack.Screen name="loginPage" component={LoginPage} />
+          <Stack.Screen name="mapPage" component={MapPage} />
+          <Stack.Screen name="guessListPage" component={GuessListPage} />
+          <Stack.Screen name="guessTextPage" component={GuessTextPage} />
+          <Stack.Screen name="guessImagePage" component={GuessImagePage} />
           <Stack.Screen
-            name='loginPage'
-            component={LoginPage}
-          />
-          <Stack.Screen
-            name='mapPage'
-            component={MapPage}
-          />
-          <Stack.Screen
-            name='guessListPage'
-            component={GuessListPage}
-          />
-          <Stack.Screen
-            name='guessTextPage'
-            component={GuessTextPage}
-          />
-          <Stack.Screen
-            name='guessImagePage'
-            component={GuessImagePage}
-          />
-          <Stack.Screen
-            name='locationEditorPage'
+            name="locationEditorPage"
             component={LocationEditorPage}
           />
         </Stack.Navigator>
       </NavigationContainer>
-      <Toast
-              position='bottom'
-              bottomOffset={20}
-      />
+      <Toast position="bottom" bottomOffset={20} />
     </StatusContextProvider>
   );
 }
