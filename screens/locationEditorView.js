@@ -67,7 +67,7 @@ const LocationEditorPage = ({ navigation, route }) => {
   }
 
   function removeImage(id) {
-    setImageList([imageList.sort((n) => n.id != id)]);
+    setImageList([imageList.filter((n) => n.id != id)]);
   }
 
   function removeIngredient(id) {
@@ -149,9 +149,10 @@ const LocationEditorPage = ({ navigation, route }) => {
       ImagePicker.launchCameraAsync()
         .then((response) => {
           if (!response.canceled) {
+            const _nextId =setNextId(imageList)
             setImageList([
               ...imageList,
-              { uri: response.assets[0].uri, id: imageList.length },
+              { uri: response.assets[0].uri, id: _nextId },
             ]);
           }
         })
