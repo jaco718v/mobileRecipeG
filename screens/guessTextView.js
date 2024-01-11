@@ -90,7 +90,6 @@ const GuessTextPage = ({ navigation, route }) => {
     setShowScore(true);
     setScore(_score);
 
-    console.log(statusContext.accountData.type);
     setTimeout(async () => {
       if (statusContext.accountData.type !== null) {
         const scoreRef = doc(
@@ -136,7 +135,6 @@ const GuessTextPage = ({ navigation, route }) => {
           event.absoluteX,
           event.absoluteY
         );
-        console.log(coordinates);
         runOnJS(onMove)(coordinates, guessOption.id);
       },
     });

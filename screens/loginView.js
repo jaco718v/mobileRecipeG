@@ -66,10 +66,9 @@ const LoginPage = ({ navigation, route }) => {
         enteredEmail,
         enteredPassword
       );
-      console.log("sign up success " + userCredential.user.uid);
+      // console.log("sign up success " + userCredential.user.uid);
       setupUserData(userCredential.user.uid);
     } catch (error) {
-      console.log("oi");
       errorToast("Email already has an account");
     }
   }
@@ -81,7 +80,7 @@ const LoginPage = ({ navigation, route }) => {
         totalScore: 0,
       });
     } catch (error) {
-      console.log("error addDocument" + error);
+      errorToast("Error getting account-data")
     }
   }
 
@@ -140,6 +139,7 @@ const LoginPage = ({ navigation, route }) => {
 
             <TextInput
               style={styles.input}
+              secureTextEntry={true}
               onChangeText={(newText) => setEnteredPassword(newText)}
               value={enteredPassword}
             />

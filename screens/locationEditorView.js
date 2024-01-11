@@ -95,7 +95,7 @@ const LocationEditorPage = ({ navigation, route }) => {
         errorToast("Error while saving recipe");
       }
     } else {
-      console.log("Size cannot exceed 9 or be less than 2");
+      errorToast("Size cannot exceed 9 or be less than 2");
     }
   }
 
@@ -120,7 +120,7 @@ const LocationEditorPage = ({ navigation, route }) => {
         errorToast("Error while saving recipe");
       }
     } else {
-      console.log("Size cannot exceed 6 or be less than 3");
+      errorToast("Size cannot exceed 6 or be less than 3");
     }
   }
 
@@ -135,7 +135,7 @@ const LocationEditorPage = ({ navigation, route }) => {
         `ingredient-${locationId}-${nextId}-${counter++}.jpg`
       );
       uploadBytes(storageRef, blob).then((snapshot) => {
-        console.log("image uploaded");
+        successToast("image uploaded");
       });
     }
   }

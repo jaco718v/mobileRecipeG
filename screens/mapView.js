@@ -105,6 +105,7 @@ const MapPage = ({ navigation, route }) => {
         locationId: newId,
       });
       successToast("Location successfully created");
+      setShowCreate(false)
     } catch (error) {
       errorToast("Encountered an error while creating location");
     }

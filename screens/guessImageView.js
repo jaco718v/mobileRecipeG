@@ -125,7 +125,6 @@ const GuessImagePage = ({ navigation, route }) => {
       }
     }
 
-    console.log(rightAnswers, totalAnswers);
 
     if (totalAnswers < guessOptions.numberOfImages) {
       totalAnswers = guessOptions.numberOfImages;

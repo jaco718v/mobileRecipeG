@@ -146,10 +146,12 @@ const GuessListPage = ({ navigation, route }) => {
     });
     const userRef = doc(db, "users", statusContext.currentUser.uid);
     await updateDoc(userRef, {
-      totalScore: statusContext.accountData.totalScore + recipe.score,
+      totalScore: statusContext.accountData.totalScore + 30,
     }).catch((error) => {
       errorToast("Error in updating score");
     });
+    statusContext.accountData.totalScore =
+    statusContext.accountData.totalScore + _score;
   }
 
   async function downloadAndDisplayImage(recipeId) {
