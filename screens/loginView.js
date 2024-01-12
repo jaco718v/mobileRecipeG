@@ -112,7 +112,7 @@ const LoginPage = ({ navigation, route }) => {
           }
         }}
       >
-        <Text style={styles.title}>Login-Guesser</Text>
+        <Text style={styles.title}>Recipe-Guesser</Text>
 
         {!userId && (
           <>
