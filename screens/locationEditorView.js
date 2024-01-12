@@ -135,7 +135,7 @@ const LocationEditorPage = ({ navigation, route }) => {
         `ingredient-${locationId}-${nextId}-${counter++}.jpg`
       );
       uploadBytes(storageRef, blob).then((snapshot) => {
-        successToast("image uploaded");
+        // successToast("image uploaded");
       });
     }
   }

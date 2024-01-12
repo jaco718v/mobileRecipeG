@@ -190,7 +190,7 @@ const GuessListPage = ({ navigation, route }) => {
           data={list}
           renderItem={(recipe) => (
             <View style={styles.listRow}>
-              <Text
+              <TouchableOpacity
                 style={styles.listItem}
                 onPress={() => {
                   if (!recipe.item.score)
@@ -203,8 +203,8 @@ const GuessListPage = ({ navigation, route }) => {
                         });
                 }}
               >
-                {recipe.item.name}
-              </Text>
+                <Text>{recipe.item.name}</Text>
+              </TouchableOpacity>
 
               <View style={{ flexDirection: "row" }}>
                 {recipe.item.taken && (
